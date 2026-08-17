@@ -8,10 +8,11 @@
 **Execution branch:** `ai/goal-current`  
 **Active request:** Build ADB Device Discovery tool; stop after real Android device detection succeeds.  
 **Current gate:** G00 foundation pre-plan review  
-**Status:** IN_PROGRESS  
-**Latest trigger:** `bb1c93621b3c4f5f5d01719bd97cac335a9a7827` (`ai-review-request: G00 gate before G01 device discovery`)  
+**Status:** STALLED_RETRIED  
+**Latest trigger:** `30be5e90291bd2779c8f4036b5ccd801a3282e32` (`ai-review-request: G00 stalled recheck before G01`)  
 **G00 worker draft:** `ai/g00-worker` — foundation code exists, not promoted yet.  
 **G01 task:** `.ai/tasks/G01_ADB_DEVICE_DISCOVERY.md` — defined and blocked on G00 PASS.  
+**Observed blocker:** No PREPLAN_RESULT / Claude review output is visible in the repository after the prior healthy-bridge trigger. PM re-pushed the request per liveness rule.  
 **G01 functional boundary:** resolve ADB, run `adb devices -l`, parse `serial/state/product/model/device/transport_id`, distinguish `device/offline/unauthorized/no-device`, expose human-readable and JSON scan output.  
 **Out of scope until device detection passes:** screenshot, UIAutomator/XML, tap/swipe/input, WebView, OCR, Vision, workflow automation.  
 **Next automatic action:** Claude pre-plan PASS → promote/test G00 → Claude audit/PM review → activate G01 pre-plan → one coding worker → Codex live ADB scan against attached device.  
@@ -23,6 +24,7 @@
 - [x] User request captured
 - [x] G01 ADB Device Discovery task defined
 - [x] G00 dependency review re-triggered on healthy bridge
+- [x] Stalled pre-plan detected and re-pushed
 - [ ] G00 Claude pre-plan PASS
 - [ ] G00 source promoted
 - [ ] G00 Codex tests PASS
