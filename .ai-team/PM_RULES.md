@@ -17,6 +17,32 @@ If any required field is missing, PM must update `EXECUTION_PLAN.json` first and
 
 Claude pre-plan rejection caused by an empty or incomplete plan is treated as a PM contract failure, not a Worker failure.
 
+## Visible status / heartbeat
+
+ChatGPT PM must maintain `.ai-team/STATUS.md` as the human-readable live project status.
+
+Update `STATUS.md` whenever there is a meaningful transition, including:
+
+- review requested / review PASS / review FAIL;
+- worker started / worker stalled / source ready;
+- source promoted to `ai/goal-current`;
+- Codex execution started / PASS / FAIL;
+- Claude audit started / PASS / FAIL;
+- PM final review;
+- READY_FOR_USER_TEST.
+
+`STATUS.md` must show at minimum:
+
+- current goal;
+- current gate;
+- current status;
+- last observable progress;
+- blocker, if any;
+- next automatic action;
+- whether user action is required.
+
+Do not claim ACTIVE work if there is no current observable activity. Use `WAITING`, `STALLED`, `FAILED`, or `READY_FOR_USER_TEST` accurately.
+
 ## Worker liveness / escalation
 
 The coding worker must always produce observable progress: a source commit, test evidence, or an exact BLOCKED reason.
