@@ -45,5 +45,9 @@
     "sample config loads successfully and invalid numeric values fail validation",
     ".ai/project_state.json exists and records G00 as TESTING or DONE only according to test evidence"
   ],
-  "review_request": "Challenge the scope, architecture boundaries, testability, and whether any Goal 0 item should be deferred. Do not code. Return blocking issues first."
+  "review_request": "Challenge the scope, architecture boundaries, testability, and whether any Goal 0 item should be deferred. Do not code. Return blocking issues first.",
+  "pm_retry": {
+    "reason": "No preplan_latest.md produced after the initial review request; PM is re-pushing the review gate per worker/gate liveness rule.",
+    "attempt": 2
+  }
 }
