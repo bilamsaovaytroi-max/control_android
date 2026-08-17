@@ -1,0 +1,8 @@
+adb_path: adb
+adb_timeout: 10
+ui_dump_timeout: 8
+page_timeout: 45
+vision_min_confidence: 0.86
+retry_limit: 3
+stop_on_login: true
+stop_on_challenge: true
