@@ -1,0 +1,19 @@
+{
+  "spec_version": "CONTROL_ANDROID_IMPLEMENTATION_SPEC/1.0",
+  "current_goal": "G00",
+  "status": "IN_PROGRESS",
+  "tasks": {
+    "G00": {
+      "title": "Project Foundation",
+      "owner": "chatgpt-coding-worker",
+      "reviewer": "claude",
+      "executor": "codex",
+      "status": "IN_PROGRESS",
+      "required_tests": [
+        "python -m compileall src",
+        "pytest -q",
+        "python -m control_android.health"
+      ]
+    }
+  }
+}
