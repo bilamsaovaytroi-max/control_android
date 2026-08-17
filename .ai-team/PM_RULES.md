@@ -17,6 +17,26 @@ If any required field is missing, PM must update `EXECUTION_PLAN.json` first and
 
 Claude pre-plan rejection caused by an empty or incomplete plan is treated as a PM contract failure, not a Worker failure.
 
+## Claude reviewer liveness / timeout
+
+Claude pre-plan and Claude audit gates must never remain in WAITING indefinitely.
+
+For a pre-plan request:
+
+1. PM pushes exactly one `ai-review-request:` commit and leaves it as repository HEAD until the reviewer consumes it.
+2. The normal Bridge reviewer path gets a maximum observation window of 120 seconds.
+3. If `.ai-team/reviews/preplan_latest.md` is not generated within that window, mark the reviewer path `STALLED_REVIEWER` instead of continuing to wait.
+4. Retry the Bridge reviewer path at most once after confirming the request schema and current HEAD.
+5. If the second attempt still produces no review output, the infrastructure is `BLOCKED_CLAUDE_REVIEW_PATH`; stop re-pushing commits and escalate to PM with exact evidence.
+6. The preferred infrastructure repair is a direct non-interactive `claude.cmd` fallback with a finite timeout that writes the same review artifact and result token expected by the Bridge.
+7. A Claude CLI health PASS is not equivalent to an end-to-end reviewer-path PASS.
+
+The Bridge health check should eventually verify the real path:
+
+`review request -> Claude invocation -> preplan_latest.md -> ai-claude-review commit`.
+
+Do not bypass a mandatory Claude gate silently. PM may only use an explicit documented temporary fallback that still executes Claude and preserves the review artifact.
+
 ## Visible status / heartbeat
 
 ChatGPT PM must maintain `.ai-team/STATUS.md` as the human-readable live project status.
