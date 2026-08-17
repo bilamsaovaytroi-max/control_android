@@ -1,57 +1,34 @@
 {
-  "goal_id": "G00",
-  "title": "Project Foundation",
-  "project": "control_android",
-  "spec_basis": [
-    "AUTOMATION_SPEC_V2_1.md",
-    "CONTROL_ANDROID_IMPLEMENTATION_SPEC.md"
+  "request_id": "g00-project-foundation-preplan-r6",
+  "goal": "G00 - Project Foundation",
+  "project_context": "control_android is a Windows-hosted Android automation platform. G00 is foundation only. The architecture/spec requires Python 3.11+, pytest, workflow-independent core modules, structured JSONL logging, typed configuration, startup health checks, and project-state bootstrap. A source draft already exists on ai/g00-worker but must not be promoted until pre-plan review is complete.",
+  "constraints": [
+    "Keep the existing CONTROL_ANDROID Implementation Spec and AUTOMATION_SPEC_V2_1 architecture.",
+    "Exactly one Coding Worker.",
+    "No scope expansion beyond G00 foundation.",
+    "Do not implement ADB actions, Device Manager, UIAutomator/XML resolver, WebView/DOM, OpenCV, OCR, Action Engine, Workflow Engine, business workflows, or Desktop UI in G00.",
+    "No secrets in sample config or logs.",
+    "Python 3.11+ and pytest.",
+    "Claude is advisory only and must not code or assign work.",
+    "Codex is executor/tester only and must not modify source."
   ],
-  "objective": "Create the minimal project foundation required before Android device automation: Python package skeleton, configuration loader, structured JSONL logging, startup health check, project-state file, and deterministic unit tests. Do not implement ADB actions, UIAutomator selectors, WebView, OCR, Vision, workflows, or desktop UI yet.",
-  "scope": [
-    "pyproject.toml and src package layout",
-    "config/appsettings.example.yaml",
-    "typed configuration loader with validation",
-    "structured JSONL logger",
-    "startup health-check command for Python and optional external tools",
-    ".ai/project_state.json bootstrap",
-    "unit tests for config/logging/health",
-    "README bootstrap instructions"
+  "known_evidence": [
+    ".ai-team/EXECUTION_PLAN.json is populated for G00 and status is READY_FOR_PREPLAN.",
+    "Project is registered in .ai-team/project.json on branch ai/goal-current.",
+    "Claude CLI 2.1.233 was manually verified with claude.cmd -p and returned CLAUDE_OK.",
+    "Earlier Claude review reached the bridge but rejected the empty placeholder EXECUTION_PLAN.json.",
+    "A G00 source draft exists on ai/g00-worker with package skeleton, config loader, JSONL logger, health check, project state, README and pytest tests.",
+    "No source draft has been promoted to ai/goal-current yet."
   ],
-  "out_of_scope": [
-    "ADB command execution",
-    "device manager",
-    "UIAutomator/XML resolver",
-    "WebView/DOM resolver",
-    "OpenCV/OCR",
-    "Action Engine",
-    "Workflow Engine",
-    "business workflows",
-    "desktop UI"
-  ],
-  "architecture_constraints": [
-    "Core modules remain workflow-independent",
-    "No blind clicks or fixed-coordinate logic",
-    "All I/O must be timeout/cancellation-ready when introduced",
-    "No secrets in sample config or logs",
-    "Python 3.11+",
-    "pytest is the test runner",
-    "Do not redesign beyond Goal 0"
-  ],
-  "acceptance_criteria": [
-    "python -m compileall src passes",
-    "pytest -q passes",
-    "python -m control_android.health exits 0 on a normal developer machine even when optional Android tools are absent, while reporting missing optional dependencies as WARN",
-    "JSONL logger emits parseable JSON with timestamp, level, event, and optional context",
-    "sample config loads successfully and invalid numeric values fail validation",
-    ".ai/project_state.json exists and records G00 as TESTING or DONE only according to test evidence"
-  ],
-  "review_request": "Read .ai-team/EXECUTION_PLAN.json, which is populated. Review G00 only. Return blocking issues first and end with PREPLAN_RESULT: PASS or FAIL. Do not code and do not expand scope.",
-  "expected_output": ".ai-team/reviews/preplan_latest.md",
-  "pm_retry": {
-    "reason": "Attempt 4 produced no observable review output after multiple 20-second watcher intervals. PM declares the pre-plan gate STALLED and re-pushes the same G00 review request per liveness rule.",
-    "attempt": 5,
-    "stalled": true,
-    "post_registration": true,
-    "execution_plan_populated": true
-  }
+  "pm_initial_brief": "Build only the minimum project foundation: pyproject/package skeleton, config/appsettings.example.yaml, typed AppConfig loader with validation, append-only JSONL logger, startup health check that requires Python 3.11+ and treats adb/scrcpy/tesseract as optional WARN, .ai/project_state.json bootstrap, README setup/run/test instructions, and deterministic tests. Required validation after implementation is python -m compileall src, pytest -q, and python -m control_android.health. Review whether this G00 boundary and acceptance criteria are implementation-ready before PM promotes source.",
+  "review_questions": [
+    "Is the G00 scope appropriately minimal and dependency-correct?",
+    "Are any foundation responsibilities missing that would block G01 Device Core?",
+    "Are any listed responsibilities premature and better deferred?",
+    "Are the config validation and JSONL logging contracts sufficiently testable?",
+    "Is the health-check rule correct: Python 3.11+ required, adb/scrcpy/tesseract optional WARN in G00?",
+    "Are the required tests sufficient for this foundation goal without expanding scope?",
+    "Are there any blocking architecture or acceptance-criteria issues?",
+    "End the response with exactly PREPLAN_RESULT: PASS or PREPLAN_RESULT: FAIL."
+  ]
 }
