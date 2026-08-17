@@ -45,10 +45,12 @@
     "sample config loads successfully and invalid numeric values fail validation",
     ".ai/project_state.json exists and records G00 as TESTING or DONE only according to test evidence"
   ],
-  "review_request": "Read the now-populated .ai-team/EXECUTION_PLAN.json and challenge scope, architecture boundaries, testability, missing acceptance criteria, and any premature implementation. Do not code. Return blocking issues first and finish with PREPLAN_RESULT: PASS or FAIL.",
+  "review_request": "Read .ai-team/EXECUTION_PLAN.json, which is populated. Review G00 only. Return blocking issues first and end with PREPLAN_RESULT: PASS or FAIL. Do not code and do not expand scope.",
+  "expected_output": ".ai-team/reviews/preplan_latest.md",
   "pm_retry": {
-    "reason": "EXECUTION_PLAN.json is now populated with G00 goal, steps, scope, file boundary, acceptance criteria and required tests. This is the fresh review trigger after fixing the prior empty-plan PM contract failure.",
-    "attempt": 4,
+    "reason": "Attempt 4 produced no observable review output after multiple 20-second watcher intervals. PM declares the pre-plan gate STALLED and re-pushes the same G00 review request per liveness rule.",
+    "attempt": 5,
+    "stalled": true,
     "post_registration": true,
     "execution_plan_populated": true
   }
