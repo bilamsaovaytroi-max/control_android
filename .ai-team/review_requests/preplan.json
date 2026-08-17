@@ -1,5 +1,5 @@
 {
-  "request_id": "g00-project-foundation-preplan-r6",
+  "request_id": "g00-project-foundation-preplan-r7",
   "goal": "G00 - Project Foundation",
   "project_context": "control_android is a Windows-hosted Android automation platform. G00 is foundation only. The architecture/spec requires Python 3.11+, pytest, workflow-independent core modules, structured JSONL logging, typed configuration, startup health checks, and project-state bootstrap. A source draft already exists on ai/g00-worker but must not be promoted until pre-plan review is complete.",
   "constraints": [
@@ -15,15 +15,14 @@
   "known_evidence": [
     ".ai-team/EXECUTION_PLAN.json is populated for G00 and status is READY_FOR_PREPLAN.",
     "Project is registered in .ai-team/project.json on branch ai/goal-current.",
-    "Claude CLI 2.1.233 was manually verified with claude.cmd -p and returned CLAUDE_OK.",
-    "Earlier Claude review reached the bridge but rejected the empty placeholder EXECUTION_PLAN.json.",
+    "Bridge health check now reports Claude: PASS, Projects: 1, control_android: OK | ai/goal-current, BRIDGE CHECK: PASS.",
     "A G00 source draft exists on ai/g00-worker with package skeleton, config loader, JSONL logger, health check, project state, README and pytest tests.",
     "No source draft has been promoted to ai/goal-current yet."
   ],
-  "pm_initial_brief": "Build only the minimum project foundation: pyproject/package skeleton, config/appsettings.example.yaml, typed AppConfig loader with validation, append-only JSONL logger, startup health check that requires Python 3.11+ and treats adb/scrcpy/tesseract as optional WARN, .ai/project_state.json bootstrap, README setup/run/test instructions, and deterministic tests. Required validation after implementation is python -m compileall src, pytest -q, and python -m control_android.health. Review whether this G00 boundary and acceptance criteria are implementation-ready before PM promotes source.",
+  "pm_initial_brief": "Build only the minimum project foundation: pyproject/package skeleton, config/appsettings.example.yaml, typed AppConfig loader with validation, append-only JSONL logger, startup health check that requires Python 3.11+ and treats adb/scrcpy/tesseract as optional WARN, .ai/project_state.json bootstrap, README setup/run/test instructions, and deterministic tests. Required validation after implementation is python -m compileall src, pytest -q, and python -m control_android.health. Review whether this G00 boundary and acceptance criteria are implementation-ready before PM promotes source. After G00 passes, the next goal will be ADB Device Discovery only: detect connected devices and report device/offline/unauthorized state.",
   "review_questions": [
     "Is the G00 scope appropriately minimal and dependency-correct?",
-    "Are any foundation responsibilities missing that would block G01 Device Core?",
+    "Are any foundation responsibilities missing that would block G01 ADB Device Discovery?",
     "Are any listed responsibilities premature and better deferred?",
     "Are the config validation and JSONL logging contracts sufficiently testable?",
     "Is the health-check rule correct: Python 3.11+ required, adb/scrcpy/tesseract optional WARN in G00?",
