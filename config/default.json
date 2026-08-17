@@ -1,0 +1,6 @@
+{
+  "adb_path": "adb",
+  "command_timeout_seconds": 20,
+  "log_level": "INFO",
+  "artifact_dir": "artifacts"
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": "2.1",
+  "project": "control_android",
+  "current_milestone": "M2",
+  "active_task": null,
+  "tasks": {
+    "M0-FOUNDATION": {
+      "title": "Project foundation",
+      "owner": "codex",
+      "status": "DONE",
+      "tests": {"unit": "PASS", "integration": "PASS", "device": "PASS"},
+      "acceptance": ["repo structure", "config", "logging", "test gate", "health check"]
+    },
+    "M1-DEVICE-CORE": {
+      "title": "ADB device manager and UI XML transport",
+      "owner": "codex",
+      "status": "DONE",
+      "tests": {"unit": "PASS", "integration": "PASS", "device": "PASS"},
+      "acceptance": ["device discovery", "per-device lock", "screenshot", "UI XML dump"]
+    }
+  },
+  "last_test_gate": {"status": "PASS", "command": "pytest -q + M1 device smoke", "timestamp": "2026-08-17", "details": "7 unit tests passed; connected device a79508ce12b87aef produced screenshot (102992 bytes) and UI XML (17265 bytes)."}
+}
