@@ -1,0 +1,13 @@
+{
+  "phase": "posttest",
+  "ok": false,
+  "available": true,
+  "command": [
+    "C:\\Users\\OS\\AppData\\Roaming\\npm\\claude.cmd",
+    "-p"
+  ],
+  "exit_code": 0,
+  "stdout": "**FAIL**\n\nReasons:\n\n1. **Live checks are not supported.** `health.enabled` is `false` — no live health check was actually performed. The one live-check surrogate that *was* attempted, `python -m control_android.health`, **failed** (`ok: false`, exit_code 1, `ModuleNotFoundError: No module named 'control_android'`). This directly contradicts `python -m compileall src`'s claim of successfully listing `src\\control_android` — the module exists as source but isn't actually importable/runnable in this environment, which is exactly the kind of discrepancy a live check exists to catch.\n\n2. **`smoke` is empty.** No smoke tests were run at all, so there's no independent corroboration that the build is functional beyond unit tests.\n\n3. **Tests are not clean.** Of the 3 recorded test/check commands, one failed outright (`ok: false`). A report with a failing entry in the `tests` array should not be waved through as \"tests supported\" — at minimum this failure needs to be explained/resolved (e.g., wrong invocation path/PYTHONPATH vs. a genuinely broken package) before trusting the result.\n\n4. **Source commit provenance is unverified.** `source_sha` is a well-formed 40-char hex string, but nothing in the evidence (no `git show`/`git log`/branch confirmation) demonstrates this SHA was actually checked out and built from. `integrity_problems` being empty just means nothing was checked, not that integrity was confirmed.\n\nNet: pytest and compileall passing is not sufficient when the one live/runtime check attempted failed and no smoke coverage exists. This should go back for a fix to the `control_android` import/module path issue and a real health/smoke pass before re-audit.\n",
+  "stderr": "",
+  "error": "Claude output did not contain a standalone PASS verdict"
+}
