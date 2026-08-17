@@ -1,5 +1,5 @@
 {
-  "request_id": "g00-project-foundation-preplan-r9",
+  "request_id": "g00-project-foundation-preplan-r10",
   "goal": "G00 - Project Foundation",
   "project_context": "control_android is a Windows-hosted Android automation platform. G00 is foundation only. The architecture/spec requires Python 3.11+, pytest, workflow-independent core modules, structured JSONL logging, typed configuration, startup health checks, and project-state bootstrap. A source draft already exists on ai/g00-worker but must not be promoted until pre-plan review is complete. The next requested functional goal is documented at .ai/tasks/G01_ADB_DEVICE_DISCOVERY.md and must not start until G00 passes.",
   "constraints": [
@@ -18,7 +18,7 @@
     "Bridge health check reports Claude: PASS, Projects: 1, control_android: OK | ai/goal-current, BRIDGE CHECK: PASS.",
     "A G00 source draft exists on ai/g00-worker with package skeleton, config loader, JSONL logger, health check, project state, README and pytest tests.",
     "G01 ADB Device Discovery is documented but intentionally blocked on G00 completion.",
-    "No PREPLAN_RESULT or Claude review output is visible in the repository after the previous trigger, so PM marks the gate STALLED and re-pushes this request.",
+    "Previous review requests may have been superseded by later non-review commits before the watcher consumed them. This r10 request must remain repository HEAD until Bridge produces ai-claude-review output.",
     "No G00 source draft has been promoted to ai/goal-current yet."
   ],
   "pm_initial_brief": "Build only the minimum project foundation: pyproject/package skeleton, config/appsettings.example.yaml, typed AppConfig loader with validation, append-only JSONL logger, startup health check that requires Python 3.11+ and treats adb/scrcpy/tesseract as optional WARN, .ai/project_state.json bootstrap, README setup/run/test instructions, and deterministic tests. Required validation after implementation is python -m compileall src, pytest -q, and python -m control_android.health. Review whether this G00 boundary and acceptance criteria are implementation-ready before PM promotes source. After G00 passes, the next goal is G01 ADB Device Discovery only: run adb devices -l, parse real connected device identity/state, and stop after successful detection.",
