@@ -47,7 +47,8 @@
   ],
   "review_request": "Challenge the scope, architecture boundaries, testability, and whether any Goal 0 item should be deferred. Do not code. Return blocking issues first.",
   "pm_retry": {
-    "reason": "No preplan_latest.md produced after the initial review request; PM is re-pushing the review gate per worker/gate liveness rule.",
-    "attempt": 2
+    "reason": "Project registration is now confirmed by .ai-team/project.json; re-pushing a fresh post-registration review trigger for the active watcher.",
+    "attempt": 3,
+    "post_registration": true
   }
 }
