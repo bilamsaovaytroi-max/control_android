@@ -1,6 +1,112 @@
 {
-  "goal": "",
-  "status": "PENDING",
-  "steps": [],
-  "notes": "Placeholder. ChatGPT Lead must provide the execution plan before running tests."
+  "goal": "G00 - Project Foundation",
+  "status": "READY_FOR_PREPLAN",
+  "owner": "ChatGPT Web PM",
+  "worker": "1 ChatGPT Web Coding Worker",
+  "executor": "Codex Executor",
+  "reviewer": "Claude CLI",
+  "objective": "Create the minimal project foundation required before Android device automation. This goal establishes the Python package skeleton, typed configuration loading and validation, structured JSONL logging, startup health checks, project state bootstrap, README instructions, and deterministic unit tests. Do not implement device automation features in this goal.",
+  "scope": [
+    "pyproject.toml and src/control_android package skeleton",
+    "config/appsettings.example.yaml",
+    "typed AppConfig loader and validation",
+    "structured JSONL logger",
+    "startup health check for Python plus optional adb/scrcpy/tesseract detection",
+    ".ai/project_state.json bootstrap",
+    "unit tests for config, health and logging",
+    "README bootstrap/run instructions"
+  ],
+  "out_of_scope": [
+    "ADB action execution",
+    "Device Manager",
+    "UIAutomator/XML parsing and selectors",
+    "WebView/DOM resolver",
+    "OpenCV/template matching",
+    "OCR execution",
+    "Action Engine",
+    "Workflow Engine",
+    "business workflows",
+    "Desktop UI"
+  ],
+  "files_allowed": [
+    "pyproject.toml",
+    "README.md",
+    "config/appsettings.example.yaml",
+    "src/control_android/__init__.py",
+    "src/control_android/config.py",
+    "src/control_android/health.py",
+    "src/control_android/logging_utils.py",
+    "tests/test_config.py",
+    "tests/test_health.py",
+    "tests/test_logging.py",
+    ".ai/project_state.json",
+    ".ai-team/EXECUTION_PLAN.json"
+  ],
+  "steps": [
+    {
+      "id": "G00-S1",
+      "title": "Bootstrap package and dependencies",
+      "action": "Create pyproject.toml and src/control_android package for Python 3.11+ with PyYAML runtime dependency and pytest dev dependency."
+    },
+    {
+      "id": "G00-S2",
+      "title": "Typed configuration",
+      "action": "Implement AppConfig and YAML loader with validation for positive timeouts, non-negative retry limit, and vision confidence in [0,1]."
+    },
+    {
+      "id": "G00-S3",
+      "title": "Structured logging",
+      "action": "Implement append-only JSONL logging with timestamp, level, event and optional context."
+    },
+    {
+      "id": "G00-S4",
+      "title": "Startup health check",
+      "action": "Implement a CLI/module health check that requires Python 3.11+ and reports adb, scrcpy and tesseract as optional WARN when absent."
+    },
+    {
+      "id": "G00-S5",
+      "title": "Project state and docs",
+      "action": "Bootstrap .ai/project_state.json and README with install, health-check and test commands."
+    },
+    {
+      "id": "G00-S6",
+      "title": "Deterministic tests",
+      "action": "Add pytest coverage for valid/invalid config, optional-tool health behavior, and JSONL output parsing."
+    }
+  ],
+  "acceptance_criteria": [
+    "python -m compileall src passes",
+    "pytest -q passes",
+    "python -m control_android.health exits 0 on a normal developer machine when optional Android tools are absent and reports those missing optional tools as WARN",
+    "JSONL logger emits valid parseable JSON containing timestamp, level and event",
+    "config/appsettings.example.yaml loads successfully",
+    "invalid adb_timeout <= 0 fails validation",
+    "invalid vision_min_confidence outside [0,1] fails validation",
+    ".ai/project_state.json exists and does not mark G00 DONE without test evidence",
+    "No out-of-scope Android automation module is added"
+  ],
+  "required_tests": [
+    "python -m compileall src",
+    "pytest -q",
+    "python -m control_android.health"
+  ],
+  "preplan_review": {
+    "required": true,
+    "request": "Review this plan before source promotion. Challenge scope, architecture boundaries, testability, missing acceptance criteria, and any premature implementation. Return PASS only if it is implementation-ready without expanding beyond G00."
+  },
+  "worker_rules": [
+    "Use exactly one coding worker",
+    "Worker must not redesign architecture",
+    "Worker must not expand scope",
+    "If worker produces no code/commit/evidence for too long, alert PM and re-push the task",
+    "Worker cannot mark DONE"
+  ],
+  "final_gate": [
+    "Codex Executor pulls/updates source",
+    "required automated tests PASS",
+    "Claude audit PASS",
+    "ChatGPT PM final review PASS",
+    "Only then status becomes READY_FOR_USER_TEST"
+  ],
+  "notes": "Source draft already exists on ai/g00-worker and must not be promoted to ai/goal-current until Claude pre-plan review passes or PM explicitly resolves review blockers."
 }
