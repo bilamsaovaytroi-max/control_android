@@ -1,0 +1,49 @@
+{
+  "goal_id": "G00",
+  "title": "Project Foundation",
+  "project": "control_android",
+  "spec_basis": [
+    "AUTOMATION_SPEC_V2_1.md",
+    "CONTROL_ANDROID_IMPLEMENTATION_SPEC.md"
+  ],
+  "objective": "Create the minimal project foundation required before Android device automation: Python package skeleton, configuration loader, structured JSONL logging, startup health check, project-state file, and deterministic unit tests. Do not implement ADB actions, UIAutomator selectors, WebView, OCR, Vision, workflows, or desktop UI yet.",
+  "scope": [
+    "pyproject.toml and src package layout",
+    "config/appsettings.example.yaml",
+    "typed configuration loader with validation",
+    "structured JSONL logger",
+    "startup health-check command for Python and optional external tools",
+    ".ai/project_state.json bootstrap",
+    "unit tests for config/logging/health",
+    "README bootstrap instructions"
+  ],
+  "out_of_scope": [
+    "ADB command execution",
+    "device manager",
+    "UIAutomator/XML resolver",
+    "WebView/DOM resolver",
+    "OpenCV/OCR",
+    "Action Engine",
+    "Workflow Engine",
+    "business workflows",
+    "desktop UI"
+  ],
+  "architecture_constraints": [
+    "Core modules remain workflow-independent",
+    "No blind clicks or fixed-coordinate logic",
+    "All I/O must be timeout/cancellation-ready when introduced",
+    "No secrets in sample config or logs",
+    "Python 3.11+",
+    "pytest is the test runner",
+    "Do not redesign beyond Goal 0"
+  ],
+  "acceptance_criteria": [
+    "python -m compileall src passes",
+    "pytest -q passes",
+    "python -m control_android.health exits 0 on a normal developer machine even when optional Android tools are absent, while reporting missing optional dependencies as WARN",
+    "JSONL logger emits parseable JSON with timestamp, level, event, and optional context",
+    "sample config loads successfully and invalid numeric values fail validation",
+    ".ai/project_state.json exists and records G00 as TESTING or DONE only according to test evidence"
+  ],
+  "review_request": "Challenge the scope, architecture boundaries, testability, and whether any Goal 0 item should be deferred. Do not code. Return blocking issues first."
+}
