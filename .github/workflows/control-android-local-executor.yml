@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   execute-local:
-    runs-on: [self-hosted, Windows, X64, control-android]
+    runs-on: [self-hosted, Windows, X64]
     timeout-minutes: 45
     steps:
       - name: Execute latest dispatch on local project
