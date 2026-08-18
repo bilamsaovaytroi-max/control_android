@@ -1,8 +1,8 @@
 {
   "schema_version": "2.1",
   "project": "control_android",
-  "current_milestone": "M2",
-  "active_task": null,
+  "current_milestone": "UI-MVP",
+  "active_task": "UI-MVP-01",
   "tasks": {
     "M0-FOUNDATION": {
       "title": "Project foundation",
@@ -17,6 +17,20 @@
       "status": "DONE",
       "tests": {"unit": "PASS", "integration": "PASS", "device": "PASS"},
       "acceptance": ["device discovery", "per-device lock", "screenshot", "UI XML dump"]
+    },
+    "UI-MVP-01": {
+      "title": "Desktop UI + ADB device connect",
+      "owner": "single-chatgpt-worker",
+      "status": "READY_FOR_PREPLAN",
+      "gates": {
+        "claude_preplan": "PENDING",
+        "codex_execution": "PENDING",
+        "automated_tests": "PENDING",
+        "device_smoke": "PENDING",
+        "claude_posttest": "PENDING",
+        "pm_final": "PENDING"
+      },
+      "task_file": ".ai/tasks/UI-MVP-01.md"
     }
   },
   "last_test_gate": {"status": "PASS", "command": "pytest -q + M1 device smoke", "timestamp": "2026-08-17", "details": "7 unit tests passed; connected device a79508ce12b87aef produced screenshot (102992 bytes) and UI XML (17265 bytes)."}
