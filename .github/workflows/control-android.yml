@@ -26,20 +26,31 @@ jobs:
         shell: powershell -NoProfile -ExecutionPolicy Bypass -File {0}
         run: |
           $ErrorActionPreference = 'Stop'
+          Remove-Item Env:PYTHONHOME -ErrorAction SilentlyContinue
+          Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
           $candidates = @(
+            'C:\Users\OS\AppData\Local\Programs\Python\Python311\python.exe',
+            'C:\Users\OS\AppData\Local\Programs\Python\Python310\python.exe',
             'C:\Program Files\Python311\python.exe',
             'C:\Program Files\Python310\python.exe',
             'C:\Python311\python.exe',
-            'C:\Python310\python.exe',
-            'C:\Users\OS\AppData\Local\Programs\Python\Python311\python.exe',
-            'C:\Users\OS\AppData\Local\Programs\Python\Python310\python.exe'
+            'C:\Python310\python.exe'
           )
-          $python = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+          $python = $null
+          foreach ($candidate in $candidates) {
+            if (Test-Path -LiteralPath $candidate) {
+              & $candidate -c 'import sys; print(sys.executable)' *> $null
+              if ($LASTEXITCODE -eq 0) { $python = $candidate; break }
+            }
+          }
           if (-not $python -and (Test-Path -LiteralPath 'C:\Windows\py.exe')) {
-            $python = (& 'C:\Windows\py.exe' -3.11 -c 'import sys; print(sys.executable)').Trim()
+            $resolved = (& 'C:\Windows\py.exe' -3.11 -c 'import sys; print(sys.executable)').Trim()
+            if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $resolved)) { $python = $resolved }
           }
           if (-not $python -or -not (Test-Path -LiteralPath $python)) { throw 'Python 3.10+ was not found on the runner.' }
           "PYTHON_EXE=$python" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "PYTHONHOME=" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "PYTHONPATH=" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host "Using Python: $python"
 
       - name: Verify Python
