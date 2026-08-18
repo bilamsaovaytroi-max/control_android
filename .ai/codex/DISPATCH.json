@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "dispatch_seq": 4,
+  "dispatch_seq": 5,
   "task_id": "UI-MVP-01",
   "task_file": ".ai/codex/EXECUTE_UI-MVP-01.md",
   "branch": "ai/goal-current",
