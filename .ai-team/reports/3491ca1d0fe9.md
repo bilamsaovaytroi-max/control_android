@@ -11,34 +11,34 @@
 ## Codex Executor
 - Result: PASS
 - Exit: 0
-- Time: 18.1 sec
+- Time: 16.69 sec
 
-STATUS: EXECUTION_FAILED
+STATUS: EXECUTION_FINISHED
 
 COMMAND_RESULTS:
 - command: `python -m compileall src`
   exit_code: 0
   result: PASS
-  evidence: `Listing 'src'...`
+  evidence: Source compiled successfully.
 
 - command: `pytest -q`
   exit_code: 0
   result: PASS
-  evidence: `....... [100%]`
+  evidence: `7 passed`
 
 - command: `python -m control_android.health`
-  exit_code: 1
-  result: FAIL
-  evidence: Python status `FAIL`, detail `3.9.5`; adb `PASS`; scrcpy `WARN`; tesseract `PASS`.
+  exit_code: 0
+  result: PASS
+  evidence: Python, adb, and Tesseract passed. Scrcpy reported a non-required warning: not found on PATH.
 
 BLOCKER:
-- Python health requirement failed: detected version `3.9.5`.
+- NONE
 
 ## Independent validation
 ### `python -m compileall src`
 - Result: PASS
 - Exit: 0
-- Time: 0.06 sec
+- Time: 0.05 sec
 
 ```text
 STDOUT:
@@ -53,7 +53,7 @@ STDERR:
 ### `pytest -q`
 - Result: PASS
 - Exit: 0
-- Time: 0.38 sec
+- Time: 0.31 sec
 
 ```text
 STDOUT:
@@ -65,18 +65,18 @@ STDERR:
 ```
 
 ### `python -m control_android.health`
-- Result: FAIL
-- Exit: 1
-- Time: 0.09 sec
+- Result: PASS
+- Exit: 0
+- Time: 0.08 sec
 
 ```text
 STDOUT:
 [
   {
     "name": "python",
-    "status": "FAIL",
+    "status": "PASS",
     "required": true,
-    "detail": "3.9.5"
+    "detail": "3.11.9"
   },
   {
     "name": "adb",
@@ -136,7 +136,7 @@ No tracked source changes detected.
     "-p"
   ],
   "exit_code": 0,
-  "stdout": "## Review: G00 – Project Foundation (preplan)\n\n**Scope & boundedness** — Good. `scope`, `out_of_scope`, and `files_allowed` form a closed set: package skeleton, config, logging, health check, project-state bootstrap, README, tests. No ADB/vision/OCR/workflow code is requested, and `files_allowed` is a concrete allowlist that makes scope creep mechanically detectable (any diff outside that list is a violation on its face).\n\n**Dependency correctness** — PyYAML (runtime) + pytest (dev) is the minimum needed for the stated features. No premature dependencies (no click/typer for a CLI, no logging frameworks beyond stdlib+JSONL, no requests/aiohttp). Correct call for a foundation goal.\n\n**G01 readiness** — G00 doesn't block G01. `adb devices -l` invocation/parsing is legitimately G01 work; G00's health check only needs to *detect* adb's presence (e.g., existence check / `adb version`), which is a much narrower contract than G01's device-state parsing. Nothing here forces G01 into rework. No missing foundation piece jumps out (e.g., no shared subprocess-runner abstraction is required yet — G01 can introduce it).\n\n**Premature elements** — The `AppConfig` fields implied by the acceptance criteria (`adb_timeout`, `vision_min_confidence`) reference future ADB/vision behavior that's explicitly out-of-scope for G00. This is acceptable *only* because it's schema definition, not implementation — no ADB/vision logic is being written, just typed/validated config surface. Worth the PM/worker being explicit that these fields are placeholders consumed by later goals, not evidence of scope leakage.\n\n**Testability** — Strong. Each acceptance criterion maps to a concrete, deterministic check: boundary tests for `adb_timeout <= 0` and `vision_min_confidence` outside `[0,1]`, JSONL parseability, health-check exit code with tools absent. The three `required_tests` commands are minimal and non-overlapping with out-of-scope functionality.\n\n**Health-check rule** — Correct and internally consistent: Python 3.11+ is a hard requirement (fails/non-zero if unmet), adb/scrcpy/tesseract are WARN-only when absent, overall exit 0 on a normal dev machine lacking those tools. Matches project_context constraints verbatim.\n\n**One process-boundary flag (non-blocking):** `.ai-team/EXECUTION_PLAN.json` is listed in `files_allowed` for a goal whose `worker_rules` say the worker \"must not redesign architecture / expand scope / mark DONE.\" Letting the coding worker write to the orchestration plan file itself is a governance risk — it's the PM/executor's control surface, not source code. Recommend restricting worker writes there to a narrow status field (or removing it from `files_allowed` and having the PM/executor update it instead), so a worker commit can't self-certify progress the same file is supposed to gate.\n\nNo other missing acceptance criteria or blocking architectural issues found. Plan is coherent, bounded, and testable as written.\n\nPREPLAN_RESULT: PASS\n",
+  "stdout": "## Review: G00 – Project Foundation (r10 pre-plan)\n\n**Scope check** — Tight and correctly bounded. Every listed responsibility (package skeleton, typed config, JSONL logging, health check, state bootstrap, README, tests) is pure infrastructure with no device-automation surface. The `out_of_scope` list correctly excludes ADB execution, Device Manager, UIAutomator, WebView/DOM, OpenCV, OCR, Action Engine, Workflow Engine, and Desktop UI. `files_allowed` matches the steps 1:1, so there's no room for silent scope creep.\n\n**Dependency correctness for G01** — G01 (ADB Device Discovery) needs `adb devices -l` execution and parsing. G00 supplies config + logging + optional adb *detection* (not execution) via the health check, which is exactly the right precursor without crossing into Device Manager territory. Nothing here blocks G01, and nothing here does G01's job prematurely.\n\n**Testability** — Each acceptance criterion maps to a concrete, deterministic command or assertion (`compileall`, `pytest -q`, `python -m control_android.health`, JSON-parseable log lines, explicit validation-failure cases for `adb_timeout <= 0` and `vision_min_confidence` outside `[0,1]`). This is good — reviewable by a machine, not just by eyeballing code.\n\n**Health-check rule** — Correct as specified: hard requirement on Python 3.11+, WARN (not FAIL) on missing adb/scrcpy/tesseract, exit 0 on a normal dev box. That matches \"optional tool\" semantics without letting tool absence block foundation work.\n\n**Minor gaps (non-blocking, worth PM attention)**\n1. The \"no secrets in sample config or logs\" constraint from the review request isn't reflected as an explicit acceptance criterion — only implied. Since `appsettings.example.yaml` should hold no real credentials at this stage anyway, this is low-risk, but worth a one-line acceptance criterion for future goals that do introduce secrets.\n2. The `.ai/project_state.json` criterion (\"does not mark G00 DONE without test evidence\") is a negative/process constraint rather than a direct output check — it's checkable but softer than the others. Fine for a foundation goal, just flagging it's the weakest of the criteria.\n3. README isn't independently verified (e.g., \"commands in README actually run\") — acceptable to defer since `compileall`/`pytest`/`health` indirectly cover the same commands.\n\nNone of these are architecture violations or scope leaks, and none block implementation-readiness.\n\n**Answers to review questions**\n- Scope minimal and dependency-correct: yes.\n- Missing foundation responsibilities blocking G01: none identified.\n- Premature responsibilities: none — tool *detection* is appropriately distinct from tool *use*.\n- Config/logging contracts testable: yes, criteria are concrete.\n- Health-check rule correct: yes.\n- Required tests sufficient without scope expansion: yes.\n- Blocking issues: none.\n\nPREPLAN_RESULT: PASS\n",
   "stderr": ""
 }
 ```
@@ -152,7 +152,7 @@ No tracked source changes detected.
     "-p"
   ],
   "exit_code": 0,
-  "stdout": "**FAIL**\n\nReasons:\n\n1. **Tests are not all passing.** Of the 3 recorded test commands, `python -m control_android.health` exited with code 1 (`ok: false`). Its own output shows a **required** check failing: `\"name\": \"python\", \"status\": \"FAIL\", \"required\": true, \"detail\": \"3.9.5\"`. A required dependency check failing means the test suite as a whole did not pass — this alone disqualifies a PASS verdict.\n\n2. **Live checks are not supported.** `health.enabled` is `false` and `smoke` is an empty array. No live/smoke verification was actually executed, so there's no evidence the change works in a running environment — the audit criteria explicitly require live checks to be supported, and here they were skipped entirely rather than passing.\n\n3. **Source commit cannot be independently verified.** `source_sha` (`3491ca1d0fe9a73f23d907d8fb5f08f68f85a7fc`) is well-formed (40 hex chars), and `integrity_problems` is empty, but the working directory is not a git repository, so this can't be cross-checked against an actual repo/commit — it rests solely on the self-reported field.\n\nOnly `python -m compileall src` and `pytest -q` genuinely succeeded. That's insufficient given the failed required health check and the complete absence of live/smoke evidence. Verdict: **FAIL**.\n",
+  "stdout": "## Audit result: **FAIL**\n\n**Source commit:** `source_sha` is a well-formed 40-character hex string (verified by direct count/char-class check), and `integrity_problems` is empty. No tampering evidence in the record itself. However, nothing in the payload demonstrates the tests were actually run *against a checkout of that SHA* (no `git rev-parse HEAD` / working-tree-clean confirmation is included) — a minor but real gap, not disqualifying on its own.\n\n**Tests:** All three reported commands (`compileall`, `pytest -q`, `control_android.health` module) passed with exit code 0. This part is adequately supported.\n\n**Live checks — this is the blocking issue:**\n- `\"health\": {\"enabled\": false}` — live health checking was explicitly disabled, not merely absent.\n- `\"smoke\": []` — zero smoke tests were executed.\n\nThe one health-like signal present (`python -m control_android.health` in the `tests` array) is a static/local capability probe, not a live end-to-end check, and it even reports a WARN (`scrcpy not found on PATH`) — a real environment gap.\n\nPer the stated bar — \"source commit, tests, **and live checks** are supported\" — live checks are not supported here: there is no smoke-test evidence and health verification was turned off. That alone is sufficient to withhold PASS regardless of the clean test run and absent integrity flags.\n\n**Verdict: FAIL** — insufficient live-check evidence (health disabled, smoke suite empty).\n",
   "stderr": "",
   "error": "Claude output did not contain a standalone PASS verdict"
 }
@@ -162,7 +162,7 @@ No tracked source changes detected.
 ```json
 {
   "source_commit_pass": false,
-  "final_tests_pass": false,
+  "final_tests_pass": true,
   "claude_audit_pass": false,
   "user_test_recommendation": false
 }
