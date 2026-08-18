@@ -1,73 +1,76 @@
-# CONTROL_ANDROID PM Workflow
+# CONTROL_ANDROID — Codex PM / Claude / Single Worker Workflow
 
-This file is the authoritative orchestration rule for this project.
+This file is the authoritative orchestration rule for `control_android`.
 
 ## Roles
 
-- User: briefs the job and only needs to test when PM declares READY_FOR_USER_TEST.
-- ChatGPT PM: owns scope, architecture, task breakdown, pre-code review, Worker assignment, code review, fix decisions, and final gate.
-- Exactly one ChatGPT Code Worker: produces code only from the PM-approved brief. It must not redesign, expand scope, spawn other implementation workers, or choose the next task.
-- Independent ChatGPT Audit Worker: review-only. It receives the exact GitHub revision plus Codex execution/test evidence, may not modify source, and returns AUDIT_RESULT: PASS or FAIL with concrete findings.
-- Codex Desktop/local: executor only. It pulls the PM/Worker-approved code from GitHub, applies/updates the local project, runs commands/tests/device checks, and reports raw evidence/errors. Codex does not own architecture or scope and does not redesign.
-- GitHub: handoff/bridge between PM+Worker and the local Codex executor, and the return channel for execution/audit reports.
-- Claude CLI: optional secondary reviewer only. It is NOT a blocking gate unless a future local execution cycle produces verifiable invocation evidence.
+- **User**: defines the goal and performs the final real-device acceptance test only after `READY_FOR_USER_TEST`.
+- **Codex PM**: owns task analysis, bounded plan, Claude review handoff, Worker brief, code review, automated test gate, failure diagnosis, fix brief, and final readiness decision.
+- **Exactly one Codex Worker**: implementation only. It edits code strictly within the PM-approved brief. It does not redesign, expand scope, invoke other agents, choose the next task, or declare DONE.
+- **Claude CLI**: read-only second opinion for pre-plan review and failure analysis. Claude never edits source. Claude is invoked directly in non-interactive mode with a finite timeout; a timeout/unavailable result is recorded and must not freeze the pipeline.
+- **GitHub self-hosted runner**: transport/execution host. It syncs `ai/goal-current`, clones the pinned upstream reference, invokes the PM loop, records evidence, and pushes the resulting source/report commit.
 
-## Mandatory flow
+## Mandatory execution loop
 
-1. User briefs PM.
-2. PM performs the pre-code architecture/scope review and writes a bounded implementation brief.
-3. Exactly one ChatGPT Code Worker generates code according to the PM-approved brief.
-4. PM reviews Worker output before publishing it to GitHub.
-5. PM pushes the approved code/task revision to GitHub.
-6. Codex Desktop/local pulls the exact approved GitHub revision and only executes it:
-   - update/apply local files,
-   - compile/run,
-   - automated tests,
-   - ADB/device smoke when required,
-   - capture exact stdout/stderr and executed revision.
-7. Independent ChatGPT Audit Worker reviews the exact changed revision plus test/device evidence in a fresh review context.
-   - Required gate: `AUDIT_RESULT: PASS`.
-8. If Codex or Audit Worker reports FAIL:
-   - raw failure evidence returns to PM,
-   - PM analyzes the failure and defines the fix,
-   - the same single ChatGPT Code Worker generates the bounded fix,
-   - PM reviews/pushes,
-   - Codex pulls/reruns,
-   - Audit Worker reviews again.
-9. Repeat until every required execution/test/audit gate is PASS.
-10. Only ChatGPT PM may declare `READY_FOR_USER_TEST` or `DONE`.
+1. Sync `ai/goal-current` into `C:\Users\OS\Desktop\Tools MMO\eBay Tool\control_android`.
+2. Clone or refresh `Rtiming/android-adb-automation-kit` into `vendor/android-adb-automation-kit` at the pinned reviewed commit. The vendor checkout is reference-only; never edit or commit it.
+3. Codex PM reads project contracts, current dispatch/task, current source, tests, and the upstream reference.
+4. Codex PM writes a bounded implementation plan and a first Worker brief. PM does not edit product source.
+5. The orchestrator sends the plan + brief to local Claude CLI for **PREPLAN REVIEW**.
+6. Codex PM reconciles Claude findings. Claude is advisory; valid findings are incorporated, invalid findings are rejected. Timeout/unavailable evidence is accepted without stalling.
+7. Codex PM finalizes the Worker brief with:
+   - exact scope and out-of-scope,
+   - allowed files/modules,
+   - required behavior,
+   - acceptance criteria,
+   - required tests,
+   - explicit no-redesign/no-scope-expansion rule.
+8. Exactly one Codex Worker receives `ROLE=WORKER` + the final brief and implements only that brief.
+9. Code returns to Codex PM. PM reviews the exact diff against the brief and runs task-specific checks.
+10. A hard gate independently runs at minimum:
+    - `python -m compileall src`,
+    - `pytest -q`,
+    - `adb devices`.
+11. If PM review and all required gates PASS: write `RESULT: READY_FOR_USER_TEST` and publish source + report.
+12. If anything FAILS:
+    - capture Worker result, PM review, hard-gate output, and git diff into a failure packet;
+    - send the failure packet to Claude CLI for **FAILURE ANALYSIS**;
+    - Codex PM decides the root cause and writes a minimal fix-only Worker brief;
+    - the same single-Worker mechanism applies the fix;
+    - return to step 9.
+13. If there is a real external blocker (missing Codex, missing task file, broken repository, etc.), report `BLOCKED` with exact evidence. Never fake PASS.
 
-## Claude optional-evidence rule
+## PM/Worker separation
 
-Claude CLI may be used as an extra reviewer, but a Claude invocation counts only when the local executor publishes verifiable evidence for the same task/revision, including:
-- task id and Git revision,
-- invocation timestamp,
-- non-interactive Claude command/mode,
-- process exit code,
-- captured raw output (prefer JSON output mode),
-- explicit review result.
+Codex PM may edit orchestration artifacts under `.ai/` and may run commands/tests, but it must not author product-source implementation changes. The Worker is the only role allowed to make implementation changes under `src/`, `tests/`, configuration, or other task-scoped product files.
 
-If that evidence is absent, PM treats Claude as NOT INVOKED and does not block the workflow on it.
+The Worker must be mechanical:
 
-## Hard rules
+- no brainstorming;
+- no alternative architecture;
+- no optional refactors;
+- no dependency changes unless the brief explicitly allows them;
+- no extra features;
+- no second Worker;
+- no Claude call;
+- no self-assigned next task.
 
-- PM performs the required pre-code review before every new code/fix generation.
-- Use exactly one ChatGPT Code Worker for implementation.
-- Audit Worker is separate and review-only; it must not edit source.
-- Codex is executor/tester, not the architecture owner and not an autonomous redesign agent.
-- No scope expansion without PM approval.
-- No fake PASS/DONE. Evidence must come from the actual local execution cycle.
-- Do not ask the user to copy/paste tasks, code, or errors between agents when GitHub/local reporting can carry them.
-- PM must keep iterating internally until the build/test/audit gates pass; only then notify the user to perform real-world testing.
-- Do not introduce additional bridges, watchers, daemons, multi-agent frameworks, or orchestration layers unless the user explicitly asks for them.
+## Claude liveness rule
 
-## Recommended model allocation
+Claude is invoked directly through local `claude`/`claude.cmd` using non-interactive print mode and plan permission mode. The default review timeout is 120 seconds. `TIMEOUT`, `UNAVAILABLE`, or CLI error is written to the review artifact and the Codex PM continues using its own review instead of waiting indefinitely.
 
-- PM / architecture / failure analysis: GPT-5.6 Sol High.
-- Code Worker: GPT-5.6 Terra for bounded routine coding; escalate the same Worker task to GPT-5.6 Sol High for complex implementation or difficult fixes.
-- Audit Worker: GPT-5.6 Sol High in a fresh review context, read-only.
-- Codex executor: GPT-5.6 Terra is sufficient for pull/apply/run/test/report duties; use Sol only when command interpretation/debug evidence is unusually complex.
+## Upstream integration rule
 
-## Current job
+`vendor/android-adb-automation-kit` is a reference checkout, not application code. Codex PM must selectively port/adapt useful primitives into the existing `src/control_android` architecture. Do not replace the project wholesale and do not import hard-coded coordinate-first design as the primary locator strategy.
 
-`UI-MVP-01`: build a Windows desktop UI with ADB device discovery and a Connect Device button. Reuse the existing ADB transport. Out of scope for this job: screen control, tap/swipe, OCR, OpenCV, WebView, perception, workflows, and mirroring.
+Current perception order remains:
+
+1. UIAutomator resource-id/accessibility/text/hierarchy
+2. WebView DOM/role/aria-label/text/bounds where applicable
+3. bounded OpenCV template matching
+4. cropped OCR fallback
+5. safe failure with screenshot/UI XML/evidence
+
+## User handoff
+
+Do not ask the user to test after code generation alone. Only hand off when the PM report says `READY_FOR_USER_TEST`. The report must include the exact task id, automated gate result, and the final real-device action the user should perform.
