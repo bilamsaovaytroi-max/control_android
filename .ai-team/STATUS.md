@@ -1,30 +1,39 @@
 # CONTROL_ANDROID — Live Status
 
-**Bridge readiness:** ACTIVE_BUT_STALLED  
+**Orchestration:** CODEX_PM_DIRECT  
 **Project registration:** PASS  
-**Claude CLI:** PASS previously  
-**Codex CLI:** PASS previously  
+**Codex CLI:** configured for local non-interactive PM/Worker execution  
+**Claude CLI:** configured as direct read-only reviewer with finite timeout  
 **Tracked project:** `control_android`  
 **Execution branch:** `ai/goal-current`  
-**Current milestone:** Gate recovery before M2  
-**Current gate:** Bridge V6.1.1 forced revalidation  
-**Status:** STALLED_WATCHER_STATE  
-**Last observable progress:** Python 3.11.9, compileall PASS, pytest 7/7 PASS, and health PASS are confirmed. Bridge V6.1.1 is running, but the watcher did not consume fresh PM commits `cb27ef5` and `12770fa` within the expected execution window.  
-**Blocker:** Watcher liveness/state only. Application source is not the blocker.  
-**Next automatic action:** Run the built-in forced project cycle once so V6.1.1 ignores `last_processed_action_sha`, resets the isolated executor workspace to current `ai/goal-current`, executes Codex validation, then runs Claude audit with live/E2E treated as conditional/not-applicable for G00.  
-**User action required:** YES — stop the watcher with Ctrl+C, then run `C:\\AI-Team-Bridge-V6\\FORCE_PROJECT_RUN.bat control_android`. Keep the resulting window open until it prints PASS/FAIL.
+**Current milestone:** M2  
+**Current task:** `M2-PERCEPTION-FOUNDATION`  
+**Current gate:** DISPATCHED_TO_SELF_HOSTED_RUNNER  
+**Status:** DISPATCHED_RECEIPT_NOT_YET_VERIFIED  
+**Last observable progress:** Dispatch sequence 6 was pushed for `.ai/tasks/M2-PERCEPTION-FOUNDATION.md`. The branch contains the Codex PM contract, single Worker contract, Claude review contract, deterministic `tools/pm_loop.py`, and the self-hosted runner workflow. No M2 result/report commit has returned yet, so local clone/execution is not claimed as started until observable evidence appears.  
+**Upstream reference:** `Rtiming/android-adb-automation-kit@7ed0059e6433269da4f031c25d9bb7a2c7c42289`; runner will clone it into ignored `vendor/android-adb-automation-kit` and treat it as read-only reference.  
+**Blocker:** None proven. Runner receipt/execution state is currently unverified from repository evidence.  
+**Next automatic action:** Self-hosted runner syncs `ai/goal-current`, clones/refreshes the pinned upstream checkout, invokes Codex PM preplan, Claude preplan review, exactly one Codex Worker, Codex PM diff review, hard tests, and bounded fix loops if required.  
+**User action required:** NO.  
 
-## Gate checklist
+## Workflow contract
 
-- [x] M0/M1 implementation present on `ai/goal-current`
-- [x] Executor runtime independently reported Python 3.11.9
-- [x] `python -m compileall src` PASS on previous fresh run
-- [x] `pytest -q` PASS (`7 passed`) on previous fresh run
-- [x] `python -m control_android.health` PASS on previous fresh run
-- [x] G00 plan explicitly marks live/E2E NOT_APPLICABLE
-- [x] Bridge V6.1.1 restarted
-- [ ] Forced executor cycle consumes current branch HEAD
-- [ ] Fresh source-integrity evidence PASS
-- [ ] Fresh Claude post-test audit PASS
-- [ ] PM final gate PASS
-- [ ] Activate M2 Perception
+- [x] Codex is the top-level PM/reviewer/test owner
+- [x] Claude CLI is read-only review/advisory only
+- [x] Exactly one Codex Worker performs implementation
+- [x] Worker is forbidden from redesign, scope expansion, nested agents, or declaring DONE
+- [x] Claude timeout/unavailable cannot freeze the pipeline
+- [x] Failed source is not published; only failure evidence is returned
+- [x] Upstream repository is pinned and reference-only
+- [x] M2 task scope and acceptance criteria are bounded
+- [x] Dispatch sequence 6 pushed
+- [ ] Runner receipt/execution evidence observed
+- [ ] Upstream local clone evidence observed
+- [ ] Codex PM preplan PASS
+- [ ] Claude preplan result recorded
+- [ ] Single Worker implementation complete
+- [ ] Codex PM code review PASS
+- [ ] `compileall` PASS
+- [ ] `pytest` PASS
+- [ ] `adb devices` gate PASS
+- [ ] `READY_FOR_USER_TEST`
