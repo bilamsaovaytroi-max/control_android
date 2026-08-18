@@ -1,25 +1,26 @@
 # CONTROL_ANDROID — Live Status
 
-**Bridge readiness:** RECHECKING  
+**Bridge readiness:** ACTIVE  
 **Project registration:** PASS  
 **Claude CLI:** previously PASS  
 **Codex CLI:** previously PASS  
 **Tracked project:** `control_android`  
 **Execution branch:** `ai/goal-current`  
 **Current milestone:** Gate recovery before M2  
-**Current gate:** Runtime + workspace revalidation  
-**Status:** RECHECK_REQUESTED  
-**Last observable progress:** M0/M1 source and device-core evidence exist, but the latest execution report failed because the Bridge executor used Python 3.9.5 and Claude could not verify the executor working directory as a Git repository.  
-**Blocker:** Environment gate must be re-run on Python 3.11+ from a valid Git checkout before M2 is activated.  
-**Next automatic action:** Bridge/Codex re-runs compileall, pytest, health and source-integrity checks; Claude post-test audit follows. If all pass, PM activates M2 Perception.  
-**User action required:** NO during this recheck. If the Bridge still reports Python <3.11 or a non-Git workspace, PM will surface the exact machine fix.
+**Current gate:** Python 3.11 runtime revalidation  
+**Status:** RECHECK_TRIGGERED  
+**Last observable progress:** User restarted Bridge from a PowerShell environment where `python --version` reports Python 3.11.9. Bridge is actively polling every 20 seconds.  
+**Blocker:** Pending fresh executor evidence only. Previous Python 3.9.5 result is obsolete once this commit is consumed.  
+**Next automatic action:** Bridge/Codex re-runs compileall, pytest, health and source-integrity checks under the restarted environment; Claude post-test audit follows. If all pass, PM activates M2 Perception.  
+**User action required:** NO. Keep the Bridge PowerShell window running.
 
 ## Gate checklist
 
 - [x] M0/M1 implementation present on `ai/goal-current`
 - [x] Unit tests previously passed (`7 passed`)
 - [x] ADB/device-core functionality previously produced device evidence
-- [ ] Executor runtime reports Python 3.11+
+- [x] Bridge restarted from shell reporting Python 3.11.9
+- [ ] Executor runtime independently reports Python 3.11+
 - [ ] Executor workspace verified as Git checkout
 - [ ] `python -m compileall src` PASS
 - [ ] `pytest -q` PASS
