@@ -1,6 +1,6 @@
 {
   "goal": "G00 - Project Foundation",
-  "status": "READY_FOR_PREPLAN",
+  "status": "GATE_REVALIDATION",
   "owner": "ChatGPT Web PM",
   "worker": "1 ChatGPT Web Coding Worker",
   "executor": "Codex Executor",
@@ -26,7 +26,8 @@
     "Action Engine",
     "Workflow Engine",
     "business workflows",
-    "Desktop UI"
+    "Desktop UI",
+    "HTTP service or server process"
   ],
   "files_allowed": [
     "pyproject.toml",
@@ -90,6 +91,17 @@
     "pytest -q",
     "python -m control_android.health"
   ],
+  "live": {
+    "enabled": false,
+    "reason": "NOT_APPLICABLE: G00 is a CLI/foundation goal and does not define an HTTP service, long-running app process, or goal-specific E2E smoke command.",
+    "start_command": "",
+    "working_directory": "",
+    "health_url": "",
+    "startup_timeout_sec": 45,
+    "expected_status": [200],
+    "smoke_commands": [],
+    "stop_process_after_run": true
+  },
   "preplan_review": {
     "required": true,
     "request": "Review this plan before source promotion. Challenge scope, architecture boundaries, testability, missing acceptance criteria, and any premature implementation. Return PASS only if it is implementation-ready without expanding beyond G00."
@@ -104,9 +116,10 @@
   "final_gate": [
     "Codex Executor pulls/updates source",
     "required automated tests PASS",
+    "Configured live/E2E checks PASS when applicable; otherwise NOT_APPLICABLE",
     "Claude audit PASS",
     "ChatGPT PM final review PASS",
     "Only then status becomes READY_FOR_USER_TEST"
   ],
-  "notes": "Source draft already exists on ai/g00-worker and must not be promoted to ai/goal-current until Claude pre-plan review passes or PM explicitly resolves review blockers."
+  "notes": "Gate revalidation after Bridge V6.1.1 runtime/audit fix. This update only clarifies that live/E2E is not applicable to G00; it does not expand source scope or change application behavior."
 }
