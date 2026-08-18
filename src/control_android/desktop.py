@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import queue
 import threading
 import tkinter as tk
 from tkinter import ttk
@@ -108,6 +109,7 @@ class ControlAndroidApp:
         self.root = root
         self.model = model or DeviceConnectionModel()
         self._busy = False
+        self._ui_queue: queue.Queue[Callable[[], None]] = queue.Queue()
 
         self.root.title("CONTROL ANDROID")
         self.root.minsize(520, 330)
@@ -145,6 +147,7 @@ class ControlAndroidApp:
         ttk.Label(frame, textvariable=self.serial_var).grid(row=7, column=0, sticky="w", pady=(8, 0))
         ttk.Label(frame, textvariable=self.state_var).grid(row=8, column=0, sticky="w")
 
+        self.root.after(50, self._drain_ui_queue)
         self.root.after(100, self.refresh_devices)
 
     def _selected_serial(self) -> str | None:
@@ -172,9 +175,18 @@ class ControlAndroidApp:
             try:
                 work()
             finally:
-                self.root.after(0, on_done)
+                self._ui_queue.put(on_done)
 
         threading.Thread(target=runner, daemon=True).start()
+
+    def _drain_ui_queue(self) -> None:
+        while True:
+            try:
+                callback = self._ui_queue.get_nowait()
+            except queue.Empty:
+                break
+            callback()
+        self.root.after(50, self._drain_ui_queue)
 
     def refresh_devices(self) -> None:
         previous = self._selected_serial()
