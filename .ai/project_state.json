@@ -20,15 +20,22 @@
     },
     "UI-MVP-01": {
       "title": "Desktop UI + ADB device connect",
-      "owner": "single-chatgpt-worker",
-      "status": "READY_FOR_PREPLAN",
+      "owner": "single-chatgpt-code-worker",
+      "status": "READY_FOR_CODE_WORKER",
       "gates": {
-        "claude_preplan": "PENDING",
+        "pm_precode_review": "PASS",
+        "code_worker": "PENDING",
+        "pm_code_review": "PENDING",
+        "github_publish": "PENDING",
         "codex_execution": "PENDING",
         "automated_tests": "PENDING",
         "device_smoke": "PENDING",
-        "claude_posttest": "PENDING",
+        "independent_audit": "PENDING",
         "pm_final": "PENDING"
+      },
+      "claude": {
+        "required": false,
+        "status": "NOT_INVOKED_UNVERIFIED"
       },
       "task_file": ".ai/tasks/UI-MVP-01.md"
     }
