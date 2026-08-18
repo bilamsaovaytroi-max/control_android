@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - '.ai/codex/TRIGGER.json'
+  schedule:
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -25,6 +27,7 @@ jobs:
           $repo = 'C:\Users\OS\Desktop\Tools MMO\eBay Tool\control_android'
           $phase = 'bootstrap'
           $taskId = 'UNKNOWN'
+          $dispatchSeq = -1
           $sha = '(unknown)'
           $codexExit = 999
           $compileExit = 999
@@ -37,10 +40,10 @@ jobs:
           $blocker = ''
           $who = (& whoami 2>&1 | Out-String).Trim()
 
-          function Push-Report([string]$path, [string]$message) {
+          function Push-Files([string[]]$paths, [string]$message) {
             git config user.name 'control-android-local-executor'
             git config user.email 'local-executor@users.noreply.github.com'
-            git add --force $path
+            foreach ($p in $paths) { git add --force $p }
             if (-not (git diff --cached --quiet)) {
               git commit -m $message | Out-Host
               $pushUrl = "https://x-access-token:$env:GH_TOKEN@github.com/bilamsaovaytroi-max/control_android.git"
@@ -62,9 +65,24 @@ jobs:
             $dispatch = Get-Content $dispatchPath -Raw | ConvertFrom-Json
             $taskId = [string]$dispatch.task_id
             $taskFile = [string]$dispatch.task_file
+            $dispatchSeq = [int]$dispatch.dispatch_seq
             if ([string]::IsNullOrWhiteSpace($taskId)) { throw 'dispatch.task_id is required' }
             if ([string]::IsNullOrWhiteSpace($taskFile)) { throw 'dispatch.task_file is required' }
             if (-not (Test-Path (Join-Path $repo $taskFile))) { throw "Task file missing: $taskFile" }
+
+            $statePath = Join-Path $repo '.ai\codex\LAST_PROCESSED.json'
+            if (Test-Path $statePath) {
+              try {
+                $state = Get-Content $statePath -Raw | ConvertFrom-Json
+                $lastSeq = [int]$state.dispatch_seq
+                if ($lastSeq -ge $dispatchSeq) {
+                  Write-Host "No new dispatch. latest=$dispatchSeq processed=$lastSeq"
+                  exit 0
+                }
+              } catch {
+                Write-Host 'Ignoring malformed LAST_PROCESSED.json and continuing.'
+              }
+            }
 
             $reportDir = Join-Path $repo '.ai\codex\reports'
             New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
@@ -89,13 +107,14 @@ jobs:
             @"
 # RUNNER HEARTBEAT — $taskId
 PHASE: preflight
+DISPATCH_SEQ: $dispatchSeq
 EXECUTED_SHA: $sha
 RUN_AS: $who
 CODEX_CMD: $codexCmd
 PY_CMD: $pyCmd
 ADB_CMD: $adbCmd
 "@ | Set-Content -Encoding UTF8 $heartbeatPath
-            Push-Report $heartbeatPath "runner-heartbeat: $taskId"
+            Push-Files @($heartbeatPath) "runner-heartbeat: $taskId seq $dispatchSeq"
 
             $phase = 'codex'
             if (-not $codexCmd) {
@@ -141,11 +160,13 @@ ADB_CMD: $adbCmd
               $reportDir = Join-Path $repo '.ai\codex\reports'
               New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
               $reportPath = Join-Path $reportDir (($taskId -replace '[^A-Za-z0-9._-]','_') + '.md')
+              $statePath = Join-Path $repo '.ai\codex\LAST_PROCESSED.json'
               $result = if (($blocker -eq '') -and ($codexExit -eq 0) -and ($compileExit -eq 0) -and ($pytestExit -eq 0) -and ($adbExit -eq 0)) { 'PASS' } else { 'FAIL' }
               @"
 # CODEX EXECUTION REPORT — $taskId
 
 PHASE: $phase
+DISPATCH_SEQ: $dispatchSeq
 EXECUTED_SHA: $sha
 RUN_AS: $who
 CODEX_EXIT: $codexExit
@@ -179,7 +200,14 @@ $pytestOut
 $adbOut
 ```
 "@ | Set-Content -Encoding UTF8 $reportPath
-              try { Push-Report $reportPath "executor-report: $taskId $result" } catch { Write-Error $_ }
+              @"
+{
+  "dispatch_seq": $dispatchSeq,
+  "task_id": "$taskId",
+  "result": "$result"
+}
+"@ | Set-Content -Encoding UTF8 $statePath
+              try { Push-Files @($reportPath, $statePath) "executor-report: $taskId seq $dispatchSeq $result" } catch { Write-Error $_ }
               if ($result -ne 'PASS') { exit 1 }
             } else {
               Write-Error $blocker
