@@ -1,53 +1,10 @@
-# AI Team V6.1 Execution Report
+# Claude CLI Audit
 
 ## STATUS
 **FAIL**
 
-## Project
-- ID: `control_android`
-- Source revision: `7dcf95092d220feb730298a780b3ed5124b69209`
-- Branch: `ai/goal-current`
-
-## Codex Executor
-- Result: PASS
-- Exit: 0
-- Time: 6.47 sec
-
-STATUS: EXECUTION_FINISHED
-
-COMMAND_RESULTS:
-- None supplied.
-
-BLOCKER:
-- NONE
-
-## Independent validation
-_None._
-
-## Live / health
-```json
-{
-  "enabled": false
-}
-```
-
-## Smoke / E2E
-_None._
-
-## Live log
-```text
-
-```
-
-## Source integrity
-**PASS**
-
-```text
-No tracked source changes detected.
-```
-
-## Claude CLI Audit
-**FAIL**
+## Source
+`7dcf95092d220feb730298a780b3ed5124b69209`
 
 REVIEW_MODE: AUDIT
 
@@ -67,9 +24,3 @@ UNRESOLVED_RISKS:
 - `executor.ok: true` with zero commands executed is a structural gap: a vacuously successful executor run does not satisfy acceptance criteria that require command output.
 
 AUDIT_RESULT: FAIL
-
-## Handoff
-NEXT: PM_REVIEW
-
-PASS requires execution gates AND Claude audit PASS.
-PM makes the final DONE decision.
