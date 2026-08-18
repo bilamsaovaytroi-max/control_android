@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Verify Python
-        shell: powershell
+        shell: powershell -NoProfile -ExecutionPolicy Bypass -File {0}
         run: |
           $ErrorActionPreference = 'Stop'
           if (-not (Test-Path -LiteralPath $env:PYTHON_EXE)) { throw "Python not found: $env:PYTHON_EXE" }
@@ -27,24 +27,24 @@ jobs:
           & $env:PYTHON_EXE -m pip --version
 
       - name: Install project test dependencies
-        shell: powershell
+        shell: powershell -NoProfile -ExecutionPolicy Bypass -File {0}
         run: '& $env:PYTHON_EXE -m pip install -e ".[dev]"'
 
       - name: Compile source
-        shell: powershell
+        shell: powershell -NoProfile -ExecutionPolicy Bypass -File {0}
         run: '& $env:PYTHON_EXE -m compileall src'
 
       - name: Run tests
-        shell: powershell
+        shell: powershell -NoProfile -ExecutionPolicy Bypass -File {0}
         run: '& $env:PYTHON_EXE -m pytest -q'
 
       - name: Run health check
-        shell: powershell
+        shell: powershell -NoProfile -ExecutionPolicy Bypass -File {0}
         run: '& $env:PYTHON_EXE -m control_android.cli health'
 
       - name: Collect evidence
         if: always()
-        shell: powershell
+        shell: powershell -NoProfile -ExecutionPolicy Bypass -File {0}
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Force artifacts/bridge | Out-Null
