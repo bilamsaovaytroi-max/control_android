@@ -1,10 +1,10 @@
 {
-  "schema_version": "1.0",
-  "dispatch_seq": 5,
-  "task_id": "UI-MVP-01",
-  "task_file": ".ai/codex/EXECUTE_UI-MVP-01.md",
+  "schema_version": "2.0",
+  "dispatch_seq": 6,
+  "task_id": "M2-PERCEPTION-FOUNDATION",
+  "task_file": ".ai/tasks/M2-PERCEPTION-FOUNDATION.md",
   "branch": "ai/goal-current",
   "project_path": "C:\\Users\\OS\\Desktop\\Tools MMO\\eBay Tool\\control_android",
-  "mode": "execute_test_report",
+  "mode": "codex_pm_claude_single_worker_loop",
   "requested_by": "chatgpt-pm"
 }
