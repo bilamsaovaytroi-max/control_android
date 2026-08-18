@@ -1,0 +1,110 @@
+name: control-android-local-executor
+
+on:
+  push:
+    branches:
+      - ai/goal-current
+    paths:
+      - '.ai/codex/DISPATCH.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  execute-local:
+    runs-on: [self-hosted, Windows, X64, control-android]
+    timeout-minutes: 45
+    steps:
+      - name: Execute latest dispatch on local project
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $repo = 'C:\Users\OS\Desktop\Tools MMO\eBay Tool\control_android'
+          if (-not (Test-Path $repo)) { throw "Project folder not found: $repo" }
+          Set-Location $repo
+
+          git fetch origin ai/goal-current
+          git checkout -B ai/goal-current origin/ai/goal-current
+          git reset --hard origin/ai/goal-current
+
+          $dispatchPath = Join-Path $repo '.ai\codex\DISPATCH.json'
+          if (-not (Test-Path $dispatchPath)) { throw 'Missing .ai/codex/DISPATCH.json' }
+          $dispatch = Get-Content $dispatchPath -Raw | ConvertFrom-Json
+          $taskId = [string]$dispatch.task_id
+          $taskFile = [string]$dispatch.task_file
+          if ([string]::IsNullOrWhiteSpace($taskId)) { throw 'dispatch.task_id is required' }
+          if ([string]::IsNullOrWhiteSpace($taskFile)) { throw 'dispatch.task_file is required' }
+          if (-not (Test-Path (Join-Path $repo $taskFile))) { throw "Task file missing: $taskFile" }
+
+          $reportDir = Join-Path $repo '.ai\codex\reports'
+          New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
+          $reportPath = Join-Path $reportDir ($taskId + '.md')
+          $codexLog = Join-Path $reportDir ($taskId + '.codex.txt')
+
+          $sha = (git rev-parse HEAD).Trim()
+          $prompt = "You are the Codex executor only. Read $taskFile from the current repository and execute it exactly. Do not redesign or generate alternative architecture. Run the requested compile/tests/ADB checks. Return concise raw execution evidence and blockers."
+
+          $codexExit = 999
+          try {
+            & codex exec --skip-git-repo-check -C $repo -s workspace-write --output-last-message $codexLog $prompt
+            $codexExit = $LASTEXITCODE
+          } catch {
+            $_ | Out-String | Set-Content -Encoding UTF8 $codexLog
+            $codexExit = 998
+          }
+
+          $compileOut = & py -3.11 -m compileall src 2>&1 | Out-String
+          $compileExit = $LASTEXITCODE
+          $pytestOut = & py -3.11 -m pytest -q 2>&1 | Out-String
+          $pytestExit = $LASTEXITCODE
+          $adbOut = & adb devices 2>&1 | Out-String
+          $adbExit = $LASTEXITCODE
+
+          $result = if (($codexExit -eq 0) -and ($compileExit -eq 0) -and ($pytestExit -eq 0) -and ($adbExit -eq 0)) { 'PASS' } else { 'FAIL' }
+          $codexText = if (Test-Path $codexLog) { Get-Content $codexLog -Raw } else { '(no codex output)' }
+
+          @"
+# CODEX EXECUTION REPORT — $taskId
+
+EXECUTED_SHA: $sha
+CODEX_EXIT: $codexExit
+COMPILEALL_EXIT: $compileExit
+PYTEST_EXIT: $pytestExit
+ADB_EXIT: $adbExit
+CODEX_RESULT: $result
+
+## Codex output
+
+```
+$codexText
+```
+
+## compileall
+
+```
+$compileOut
+```
+
+## pytest
+
+```
+$pytestOut
+```
+
+## adb devices
+
+```
+$adbOut
+```
+"@ | Set-Content -Encoding UTF8 $reportPath
+
+          git config user.name 'control-android-local-executor'
+          git config user.email 'local-executor@users.noreply.github.com'
+          git add --force $reportPath
+          if (-not (git diff --cached --quiet)) {
+            git commit -m "executor-report: $taskId $result"
+            git push origin HEAD:ai/goal-current
+          }
+
+          if ($result -ne 'PASS') { exit 1 }
