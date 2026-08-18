@@ -1,36 +1,29 @@
 # CONTROL_ANDROID — Live Status
 
-**Bridge readiness:** PASS  
+**Bridge readiness:** RECHECKING  
 **Project registration:** PASS  
-**Claude CLI:** PASS  
-**Codex CLI:** PASS  
+**Claude CLI:** previously PASS  
+**Codex CLI:** previously PASS  
 **Tracked project:** `control_android`  
 **Execution branch:** `ai/goal-current`  
-**Active request:** Build ADB Device Discovery tool; stop after real Android device detection succeeds.  
-**Current gate:** G00 foundation pre-plan review  
-**Status:** STALLED_RETRIED  
-**Latest trigger:** `30be5e90291bd2779c8f4036b5ccd801a3282e32` (`ai-review-request: G00 stalled recheck before G01`)  
-**G00 worker draft:** `ai/g00-worker` — foundation code exists, not promoted yet.  
-**G01 task:** `.ai/tasks/G01_ADB_DEVICE_DISCOVERY.md` — defined and blocked on G00 PASS.  
-**Observed blocker:** No PREPLAN_RESULT / Claude review output is visible in the repository after the prior healthy-bridge trigger. PM re-pushed the request per liveness rule.  
-**G01 functional boundary:** resolve ADB, run `adb devices -l`, parse `serial/state/product/model/device/transport_id`, distinguish `device/offline/unauthorized/no-device`, expose human-readable and JSON scan output.  
-**Out of scope until device detection passes:** screenshot, UIAutomator/XML, tap/swipe/input, WebView, OCR, Vision, workflow automation.  
-**Next automatic action:** Claude pre-plan PASS → promote/test G00 → Claude audit/PM review → activate G01 pre-plan → one coding worker → Codex live ADB scan against attached device.  
-**User action required:** NO. Keep Android device connected with USB debugging enabled when G01 reaches live-device test.
+**Current milestone:** Gate recovery before M2  
+**Current gate:** Runtime + workspace revalidation  
+**Status:** RECHECK_REQUESTED  
+**Last observable progress:** M0/M1 source and device-core evidence exist, but the latest execution report failed because the Bridge executor used Python 3.9.5 and Claude could not verify the executor working directory as a Git repository.  
+**Blocker:** Environment gate must be re-run on Python 3.11+ from a valid Git checkout before M2 is activated.  
+**Next automatic action:** Bridge/Codex re-runs compileall, pytest, health and source-integrity checks; Claude post-test audit follows. If all pass, PM activates M2 Perception.  
+**User action required:** NO during this recheck. If the Bridge still reports Python <3.11 or a non-Git workspace, PM will surface the exact machine fix.
 
 ## Gate checklist
 
-- [x] Bridge health PASS
-- [x] User request captured
-- [x] G01 ADB Device Discovery task defined
-- [x] G00 dependency review re-triggered on healthy bridge
-- [x] Stalled pre-plan detected and re-pushed
-- [ ] G00 Claude pre-plan PASS
-- [ ] G00 source promoted
-- [ ] G00 Codex tests PASS
-- [ ] G00 Claude audit + PM review PASS
-- [ ] G01 Claude pre-plan PASS
-- [ ] G01 code produced
-- [ ] G01 unit tests PASS
-- [ ] Real device detected through ADB
-- [ ] READY_FOR_USER_TEST
+- [x] M0/M1 implementation present on `ai/goal-current`
+- [x] Unit tests previously passed (`7 passed`)
+- [x] ADB/device-core functionality previously produced device evidence
+- [ ] Executor runtime reports Python 3.11+
+- [ ] Executor workspace verified as Git checkout
+- [ ] `python -m compileall src` PASS
+- [ ] `pytest -q` PASS
+- [ ] `python -m control_android.health` PASS
+- [ ] Claude post-test audit PASS
+- [ ] PM final gate PASS
+- [ ] Activate M2 Perception
