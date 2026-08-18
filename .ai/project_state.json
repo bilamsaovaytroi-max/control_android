@@ -1,8 +1,8 @@
 {
-  "schema_version": "2.1",
+  "schema_version": "2.2",
   "project": "control_android",
-  "current_milestone": "UI-MVP",
-  "active_task": "UI-MVP-01",
+  "current_milestone": "M2",
+  "active_task": "M2-PERCEPTION-FOUNDATION",
   "tasks": {
     "M0-FOUNDATION": {
       "title": "Project foundation",
@@ -20,7 +20,7 @@
     },
     "UI-MVP-01": {
       "title": "Desktop UI + ADB device connect",
-      "owner": "single-chatgpt-code-worker",
+      "owner": "legacy-single-chatgpt-code-worker",
       "status": "READY_FOR_LOCAL_EXECUTION",
       "approved_revision": "c13c70198f024ed2f88c3f089bfcb0431c562428",
       "gates": {
@@ -45,12 +45,38 @@
         "tests/test_desktop.py",
         "START_CONTROL_ANDROID.bat"
       ]
+    },
+    "M2-PERCEPTION-FOUNDATION": {
+      "title": "Smart Locator perception foundation",
+      "owner": "codex-pm-single-worker",
+      "status": "IN_PROGRESS",
+      "task_file": ".ai/tasks/M2-PERCEPTION-FOUNDATION.md",
+      "upstream_reference": "Rtiming/android-adb-automation-kit@7ed0059e6433269da4f031c25d9bb7a2c7c42289",
+      "gates": {
+        "codex_pm_preplan": "PENDING",
+        "claude_preplan": "PENDING",
+        "single_worker": "PENDING",
+        "codex_pm_code_review": "PENDING",
+        "automated_tests": "PENDING",
+        "adb_gate": "PENDING",
+        "pm_final": "PENDING"
+      },
+      "acceptance": [
+        "reuse existing ADB/device core",
+        "common candidate and bounds model",
+        "UI XML resolver",
+        "WebView provider boundary",
+        "bounded OpenCV template adapter",
+        "bounded OCR adapter",
+        "Smart Locator ordered UI -> WebView -> CV -> OCR",
+        "no coordinate-first selector"
+      ]
     }
   },
   "last_test_gate": {
     "status": "PASS",
     "command": "isolated reconstructed repo: python -m compileall src + pytest -q",
     "timestamp": "2026-08-18",
-    "details": "16 tests passed in isolated compatible Python environment; authoritative Windows/Codex/ADB/UI smoke still required."
+    "details": "16 tests passed in isolated compatible Python environment; authoritative Windows/Codex/ADB/UI smoke still required for UI-MVP-01. M2 gates have not run yet."
   }
 }
