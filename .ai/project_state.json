@@ -21,24 +21,36 @@
     "UI-MVP-01": {
       "title": "Desktop UI + ADB device connect",
       "owner": "single-chatgpt-code-worker",
-      "status": "READY_FOR_CODE_WORKER",
+      "status": "READY_FOR_LOCAL_EXECUTION",
+      "approved_revision": "c13c70198f024ed2f88c3f089bfcb0431c562428",
       "gates": {
         "pm_precode_review": "PASS",
-        "code_worker": "PENDING",
-        "pm_code_review": "PENDING",
-        "github_publish": "PENDING",
-        "codex_execution": "PENDING",
-        "automated_tests": "PENDING",
-        "device_smoke": "PENDING",
-        "independent_audit": "PENDING",
+        "code_worker": "PASS",
+        "pm_code_review": "PASS",
+        "github_publish": "PASS",
+        "isolated_preflight": "PASS_16_TESTS",
+        "codex_execution": "PENDING_LOCAL",
+        "automated_tests": "PENDING_LOCAL",
+        "device_smoke": "PENDING_LOCAL",
+        "independent_audit": "PENDING_EXECUTION_EVIDENCE",
         "pm_final": "PENDING"
       },
       "claude": {
         "required": false,
-        "status": "NOT_INVOKED_UNVERIFIED"
+        "status": "OPTIONAL_NOT_BLOCKING"
       },
-      "task_file": ".ai/tasks/UI-MVP-01.md"
+      "task_file": ".ai/tasks/UI-MVP-01.md",
+      "changed_files": [
+        "src/control_android/desktop.py",
+        "tests/test_desktop.py",
+        "START_CONTROL_ANDROID.bat"
+      ]
     }
   },
-  "last_test_gate": {"status": "PASS", "command": "pytest -q + M1 device smoke", "timestamp": "2026-08-17", "details": "7 unit tests passed; connected device a79508ce12b87aef produced screenshot (102992 bytes) and UI XML (17265 bytes)."}
+  "last_test_gate": {
+    "status": "PASS",
+    "command": "isolated reconstructed repo: python -m compileall src + pytest -q",
+    "timestamp": "2026-08-18",
+    "details": "16 tests passed in isolated compatible Python environment; authoritative Windows/Codex/ADB/UI smoke still required."
+  }
 }
