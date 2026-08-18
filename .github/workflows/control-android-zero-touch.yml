@@ -1,0 +1,188 @@
+name: control-android-zero-touch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.ai/codex/TRIGGER.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  execute-local:
+    runs-on: [self-hosted, Windows, X64, control_android]
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Execute latest AI dispatch on home machine
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $repo = 'C:\Users\OS\Desktop\Tools MMO\eBay Tool\control_android'
+          $phase = 'bootstrap'
+          $taskId = 'UNKNOWN'
+          $sha = '(unknown)'
+          $codexExit = 999
+          $compileExit = 999
+          $pytestExit = 999
+          $adbExit = 999
+          $codexText = ''
+          $compileOut = ''
+          $pytestOut = ''
+          $adbOut = ''
+          $blocker = ''
+          $who = (& whoami 2>&1 | Out-String).Trim()
+
+          function Push-Report([string]$path, [string]$message) {
+            git config user.name 'control-android-local-executor'
+            git config user.email 'local-executor@users.noreply.github.com'
+            git add --force $path
+            if (-not (git diff --cached --quiet)) {
+              git commit -m $message | Out-Host
+              $pushUrl = "https://x-access-token:$env:GH_TOKEN@github.com/bilamsaovaytroi-max/control_android.git"
+              git push $pushUrl HEAD:ai/goal-current | Out-Host
+            }
+          }
+
+          try {
+            if (-not (Test-Path $repo)) { throw "Project folder not found: $repo" }
+            Set-Location $repo
+
+            $phase = 'sync'
+            git fetch origin ai/goal-current
+            git checkout -B ai/goal-current origin/ai/goal-current
+            git reset --hard origin/ai/goal-current
+
+            $dispatchPath = Join-Path $repo '.ai\codex\DISPATCH.json'
+            if (-not (Test-Path $dispatchPath)) { throw 'Missing ai/goal-current .ai/codex/DISPATCH.json' }
+            $dispatch = Get-Content $dispatchPath -Raw | ConvertFrom-Json
+            $taskId = [string]$dispatch.task_id
+            $taskFile = [string]$dispatch.task_file
+            if ([string]::IsNullOrWhiteSpace($taskId)) { throw 'dispatch.task_id is required' }
+            if ([string]::IsNullOrWhiteSpace($taskFile)) { throw 'dispatch.task_file is required' }
+            if (-not (Test-Path (Join-Path $repo $taskFile))) { throw "Task file missing: $taskFile" }
+
+            $reportDir = Join-Path $repo '.ai\codex\reports'
+            New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
+            $heartbeatPath = Join-Path $reportDir ($taskId + '.heartbeat.md')
+            $reportPath = Join-Path $reportDir ($taskId + '.md')
+            $codexLog = Join-Path $reportDir ($taskId + '.codex.txt')
+            $sha = (git rev-parse HEAD).Trim()
+
+            $codexCmd = (Get-Command codex -ErrorAction SilentlyContinue).Source
+            if (-not $codexCmd) {
+              $candidate = 'C:\Users\OS\AppData\Roaming\npm\codex.cmd'
+              if (Test-Path $candidate) { $codexCmd = $candidate }
+            }
+            $pyCmd = (Get-Command py -ErrorAction SilentlyContinue).Source
+            if (-not $pyCmd -and (Test-Path 'C:\Windows\py.exe')) { $pyCmd = 'C:\Windows\py.exe' }
+            $adbCmd = (Get-Command adb -ErrorAction SilentlyContinue).Source
+            if (-not $adbCmd) {
+              $adbCandidate = 'C:\Users\OS\AppData\Local\Android\Sdk\platform-tools\adb.exe'
+              if (Test-Path $adbCandidate) { $adbCmd = $adbCandidate }
+            }
+
+            @"
+# RUNNER HEARTBEAT — $taskId
+PHASE: preflight
+EXECUTED_SHA: $sha
+RUN_AS: $who
+CODEX_CMD: $codexCmd
+PY_CMD: $pyCmd
+ADB_CMD: $adbCmd
+"@ | Set-Content -Encoding UTF8 $heartbeatPath
+            Push-Report $heartbeatPath "runner-heartbeat: $taskId"
+
+            $phase = 'codex'
+            if (-not $codexCmd) {
+              $codexExit = 127
+              $codexText = 'Codex CLI not found in runner service PATH or fallback path.'
+            } else {
+              $prompt = "You are the Codex executor only. Read $taskFile from the current repository and execute it exactly. Do not redesign or generate alternative architecture. Do not launch an interactive Tkinter mainloop from this service runner. Run requested non-interactive compile/tests/ADB checks and return concise raw evidence/blockers."
+              try {
+                & $codexCmd exec --skip-git-repo-check -C $repo -s workspace-write --output-last-message $codexLog $prompt
+                $codexExit = $LASTEXITCODE
+              } catch {
+                $codexExit = 998
+                $codexText = $_ | Out-String
+              }
+              if (Test-Path $codexLog) { $codexText = Get-Content $codexLog -Raw }
+            }
+
+            $phase = 'validation'
+            if ($pyCmd) {
+              $compileOut = & $pyCmd -3.11 -m compileall src 2>&1 | Out-String
+              $compileExit = $LASTEXITCODE
+              $pytestOut = & $pyCmd -3.11 -m pytest -q 2>&1 | Out-String
+              $pytestExit = $LASTEXITCODE
+            } else {
+              $compileExit = 127
+              $pytestExit = 127
+              $compileOut = 'Python launcher not found.'
+              $pytestOut = 'Python launcher not found.'
+            }
+
+            if ($adbCmd) {
+              $adbOut = & $adbCmd devices 2>&1 | Out-String
+              $adbExit = $LASTEXITCODE
+            } else {
+              $adbExit = 127
+              $adbOut = 'ADB not found in runner service PATH or fallback path.'
+            }
+          } catch {
+            $blocker = $_ | Out-String
+          } finally {
+            if (Test-Path $repo) {
+              Set-Location $repo
+              $reportDir = Join-Path $repo '.ai\codex\reports'
+              New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
+              $reportPath = Join-Path $reportDir (($taskId -replace '[^A-Za-z0-9._-]','_') + '.md')
+              $result = if (($blocker -eq '') -and ($codexExit -eq 0) -and ($compileExit -eq 0) -and ($pytestExit -eq 0) -and ($adbExit -eq 0)) { 'PASS' } else { 'FAIL' }
+              @"
+# CODEX EXECUTION REPORT — $taskId
+
+PHASE: $phase
+EXECUTED_SHA: $sha
+RUN_AS: $who
+CODEX_EXIT: $codexExit
+COMPILEALL_EXIT: $compileExit
+PYTEST_EXIT: $pytestExit
+ADB_EXIT: $adbExit
+CODEX_RESULT: $result
+
+## Blocker
+```
+$blocker
+```
+
+## Codex output
+```
+$codexText
+```
+
+## compileall
+```
+$compileOut
+```
+
+## pytest
+```
+$pytestOut
+```
+
+## adb devices
+```
+$adbOut
+```
+"@ | Set-Content -Encoding UTF8 $reportPath
+              try { Push-Report $reportPath "executor-report: $taskId $result" } catch { Write-Error $_ }
+              if ($result -ne 'PASS') { exit 1 }
+            } else {
+              Write-Error $blocker
+              exit 1
+            }
+          }
