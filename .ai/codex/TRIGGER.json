@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0",
+  "trigger_seq": 1,
+  "target_branch": "ai/goal-current",
+  "dispatch_file": ".ai/codex/DISPATCH.json",
+  "requested_by": "chatgpt-pm"
+}
