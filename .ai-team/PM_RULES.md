@@ -1,95 +1,55 @@
-# PM Execution Rules
+# PM Execution Rules — Codex PM direct loop
 
-## Pre-plan request guard
+`.ai/PM_WORKFLOW.md` is authoritative. The old ChatGPT-PM / Bridge reviewer flow is deprecated for this branch.
 
-Before creating any `ai-review-request:` commit, ChatGPT PM must validate `.ai-team/EXECUTION_PLAN.json`.
+## Role boundary
 
-The plan must not be an empty placeholder and must contain, at minimum:
+- Top-level Codex invocation is PM/reviewer/test owner.
+- Exactly one child Codex invocation is the implementation Worker.
+- Worker receives `ROLE=WORKER` and `.ai/codex/WORKER_CONTRACT.md`.
+- Claude CLI is review-only and may not edit source.
+- No additional coding workers, audit workers, agent frameworks, watchers, or redesign agents.
 
-1. a non-empty `goal`;
-2. one or more concrete `steps`;
-3. explicit `scope` and `out_of_scope`;
-4. `files_allowed` or an equivalent file boundary;
-5. measurable `acceptance_criteria`;
-6. explicit `required_tests`.
+## Pre-plan gate
 
-If any required field is missing, PM must update `EXECUTION_PLAN.json` first and must not trigger Claude pre-plan review yet.
+Before Worker implementation, Codex PM must produce a non-empty plan and bounded Worker brief containing:
 
-Claude pre-plan rejection caused by an empty or incomplete plan is treated as a PM contract failure, not a Worker failure.
+1. goal;
+2. concrete steps;
+3. scope and out-of-scope;
+4. allowed files/modules;
+5. acceptance criteria;
+6. required tests.
 
-## Claude reviewer liveness / timeout
+The plan and brief are reviewed by local Claude CLI before Worker execution. Codex PM decides which Claude findings are valid.
 
-Claude pre-plan and Claude audit gates must never remain in WAITING indefinitely.
+## Claude liveness
 
-For a pre-plan request:
+Claude review is invoked directly in non-interactive mode with a finite timeout. Default timeout: 120 seconds.
 
-1. PM pushes exactly one `ai-review-request:` commit and leaves it as repository HEAD until the reviewer consumes it.
-2. The normal Bridge reviewer path gets a maximum observation window of 120 seconds.
-3. If `.ai-team/reviews/preplan_latest.md` is not generated within that window, mark the reviewer path `STALLED_REVIEWER` instead of continuing to wait.
-4. Retry the Bridge reviewer path at most once after confirming the request schema and current HEAD.
-5. If the second attempt still produces no review output, the infrastructure is `BLOCKED_CLAUDE_REVIEW_PATH`; stop re-pushing commits and escalate to PM with exact evidence.
-6. The preferred infrastructure repair is a direct non-interactive `claude.cmd` fallback with a finite timeout that writes the same review artifact and result token expected by the Bridge.
-7. A Claude CLI health PASS is not equivalent to an end-to-end reviewer-path PASS.
+If Claude returns TIMEOUT, UNAVAILABLE, or CLI ERROR:
 
-The Bridge health check should eventually verify the real path:
+1. record exact evidence;
+2. do not wait again indefinitely;
+3. Codex PM continues with its own review;
+4. never claim Claude PASS if Claude did not return one.
 
-`review request -> Claude invocation -> preplan_latest.md -> ai-claude-review commit`.
+## Worker liveness
 
-Do not bypass a mandatory Claude gate silently. PM may only use an explicit documented temporary fallback that still executes Claude and preserves the review artifact.
+Worker must return code changes, command evidence, or an exact `WORKER_BLOCKED` reason. It may not spawn another Worker or reviewer. A stalled/failed Worker is returned to the Codex PM; PM writes a fix-only brief and reuses the same single-Worker mechanism.
 
-## Visible status / heartbeat
+## Test/fix loop
 
-ChatGPT PM must maintain `.ai-team/STATUS.md` as the human-readable live project status.
+After each Worker pass:
 
-Update `STATUS.md` whenever there is a meaningful transition, including:
+1. Codex PM reviews the exact diff against the brief.
+2. Required task-specific checks run.
+3. Hard gate runs `compileall`, `pytest`, and `adb devices` at minimum.
+4. On failure, capture a failure packet and send it to Claude CLI for read-only failure analysis.
+5. Codex PM writes the smallest bounded fix brief.
+6. Worker applies only the fix brief.
+7. Repeat until PASS or a real external blocker is proven.
 
-- review requested / review PASS / review FAIL;
-- worker started / worker stalled / source ready;
-- source promoted to `ai/goal-current`;
-- Codex execution started / PASS / FAIL;
-- Claude audit started / PASS / FAIL;
-- PM final review;
-- READY_FOR_USER_TEST.
+## User handoff
 
-`STATUS.md` must show at minimum:
-
-- current goal;
-- current gate;
-- current status;
-- last observable progress;
-- blocker, if any;
-- next automatic action;
-- whether user action is required.
-
-Do not claim ACTIVE work if there is no current observable activity. Use `WAITING`, `STALLED`, `FAILED`, or `READY_FOR_USER_TEST` accurately.
-
-## Worker liveness / escalation
-
-The coding worker must always produce observable progress: a source commit, test evidence, or an exact BLOCKED reason.
-
-If the worker produces no new code, no commit, and no evidence while remaining PENDING or IN_PROGRESS beyond the expected task window, treat the worker as STALLED.
-
-STALLED flow:
-
-1. Alert ChatGPT PM.
-2. PM inspects the blocker.
-3. PM re-pushes the brief or re-assigns exactly one coding worker.
-4. Continue the same Goal.
-
-Do not wait forever. Do not fan out multiple coding workers. Only PM decides re-push or re-assignment.
-
-## User test handoff
-
-Do not ask the user to run a manual test immediately after code generation.
-
-Only send READY FOR USER TEST after the final source commit completes all required gates:
-
-1. Codex pull/update succeeds.
-2. Automated tests pass.
-3. Required live/E2E checks pass when applicable.
-4. Claude audit passes.
-5. ChatGPT PM final review passes.
-
-If any required gate is PENDING or FAILED, keep the Goal internal and continue the fix loop.
-
-When READY FOR USER TEST is reached, provide only the exact start command/script, the user action to perform, and the expected result.
+Do not request user testing until the final PM report is `RESULT: READY_FOR_USER_TEST`. Code generation alone is never enough.
