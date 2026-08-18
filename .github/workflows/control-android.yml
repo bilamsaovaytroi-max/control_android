@@ -1,0 +1,56 @@
+name: control_android bridge
+
+on:
+  push:
+    branches:
+      - main
+      - ai/**
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: [self-hosted, Windows, control_android]
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Python
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python --version
+          python -m pip --version
+
+      - name: Install project test dependencies
+        shell: pwsh
+        run: python -m pip install -e '.[dev]'
+
+      - name: Compile source
+        shell: pwsh
+        run: python -m compileall src
+
+      - name: Run tests
+        shell: pwsh
+        run: python -m pytest -q
+
+      - name: Run health check
+        shell: pwsh
+        run: python -m control_android.cli health
+
+      - name: Collect evidence
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts/bridge | Out-Null
+          git rev-parse HEAD | Out-File -Encoding utf8 artifacts/bridge/commit.txt
+          python --version 2>&1 | Out-File -Encoding utf8 artifacts/bridge/python.txt
+          python -m control_android.cli devices 2>&1 | Out-File -Encoding utf8 artifacts/bridge/devices.txt
+
+      - name: Upload bridge evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: control-android-bridge-evidence
+          path: artifacts/bridge
