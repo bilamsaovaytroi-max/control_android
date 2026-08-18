@@ -5,3 +5,5 @@ __pycache__/
 artifacts/
 logs/
 reports/
+/vendor/android-adb-automation-kit/
+/.ai/codex/runtime/
