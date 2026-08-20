@@ -1,8 +1,8 @@
 {
   "schema_version": "2.0",
-  "dispatch_seq": 6,
-  "task_id": "M2-PERCEPTION-FOUNDATION",
-  "task_file": ".ai/tasks/M2-PERCEPTION-FOUNDATION.md",
+  "dispatch_seq": 7,
+  "task_id": "ITEM-INFORMATION-01",
+  "task_file": ".ai/tasks/ITEM-INFORMATION-01.md",
   "branch": "ai/goal-current",
   "project_path": "C:\\Users\\OS\\Desktop\\Tools MMO\\eBay Tool\\control_android",
   "mode": "codex_pm_claude_single_worker_loop",
