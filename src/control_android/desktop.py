@@ -8,6 +8,8 @@ from tkinter import ttk
 from typing import Callable
 
 from .adb import AdbError, AdbTransport
+from .item_information import BUTTON_LABEL as ITEM_INFORMATION_BUTTON_LABEL
+from .item_information import run_item_information_workflow
 
 
 ONLINE_STATE = "device"
@@ -37,6 +39,8 @@ class DeviceConnectionModel:
         self.status = "Not connected"
         self.adb_ready = False
         self.last_error: str | None = None
+        self.last_workflow_status: str | None = None
+        self.last_workflow_evidence_dir: str | None = None
 
     def refresh(self) -> list[DeviceRecord]:
         try:
@@ -103,6 +107,19 @@ class DeviceConnectionModel:
         self.status = "Connected"
         return target
 
+    def run_item_information(self) -> str:
+        if self.connected is None:
+            self.status = "Connect a device first"
+            self.last_workflow_status = None
+            self.last_workflow_evidence_dir = None
+            return self.status
+
+        result = run_item_information_workflow(self.connected.serial)
+        self.last_workflow_status = result.status
+        self.last_workflow_evidence_dir = result.evidence_dir
+        self.status = f"{ITEM_INFORMATION_BUTTON_LABEL}: {result.status}"
+        return self.status
+
 
 class ControlAndroidApp:
     def __init__(self, root: tk.Tk, model: DeviceConnectionModel | None = None):
@@ -112,13 +129,14 @@ class ControlAndroidApp:
         self._ui_queue: queue.Queue[Callable[[], None]] = queue.Queue()
 
         self.root.title("CONTROL ANDROID")
-        self.root.minsize(520, 330)
+        self.root.minsize(520, 370)
 
         self.adb_status_var = tk.StringVar(value="ADB Status: Checking...")
         self.device_var = tk.StringVar(value="")
         self.status_var = tk.StringVar(value="Status: Not connected")
         self.serial_var = tk.StringVar(value="Serial: -")
         self.state_var = tk.StringVar(value="State: -")
+        self.workflow_var = tk.StringVar(value="Workflow: -")
 
         frame = ttk.Frame(root, padding=20)
         frame.pack(fill="both", expand=True)
@@ -141,11 +159,16 @@ class ControlAndroidApp:
         self.connect_button.pack(side="left")
         self.refresh_button = ttk.Button(buttons, text="Refresh", command=self.refresh_devices)
         self.refresh_button.pack(side="left", padx=(10, 0))
+        self.item_information_button = ttk.Button(
+            buttons, text=ITEM_INFORMATION_BUTTON_LABEL, command=self.run_item_information
+        )
+        self.item_information_button.pack(side="left", padx=(10, 0))
 
         ttk.Separator(frame).grid(row=5, column=0, sticky="ew", pady=(4, 14))
         ttk.Label(frame, textvariable=self.status_var).grid(row=6, column=0, sticky="w")
         ttk.Label(frame, textvariable=self.serial_var).grid(row=7, column=0, sticky="w", pady=(8, 0))
         ttk.Label(frame, textvariable=self.state_var).grid(row=8, column=0, sticky="w")
+        ttk.Label(frame, textvariable=self.workflow_var).grid(row=9, column=0, sticky="w", pady=(8, 0))
 
         self.root.after(50, self._drain_ui_queue)
         self.root.after(100, self.refresh_devices)
@@ -162,13 +185,18 @@ class ControlAndroidApp:
         state = "disabled" if busy else "normal"
         self.connect_button.configure(state=state)
         self.refresh_button.configure(state=state)
+        self.item_information_button.configure(state=state)
         if status:
             self.status_var.set(f"Status: {status}")
 
-    def _run_background(self, work: Callable[[], None], on_done: Callable[[], None]) -> None:
+    def _run_background(
+        self,
+        work: Callable[[], None],
+        on_done: Callable[[], None],
+        working_status: str,
+    ) -> None:
         if self._busy:
             return
-        working_status = "Connecting..." if work.__name__ == "do_connect" else "Refreshing..."
         self._set_busy(True, working_status)
 
         def runner() -> None:
@@ -198,7 +226,7 @@ class ControlAndroidApp:
             self._render(previous_serial=previous)
             self._set_busy(False)
 
-        self._run_background(do_refresh, done)
+        self._run_background(do_refresh, done, "Refreshing...")
 
     def connect_device(self) -> None:
         selected = self._selected_serial()
@@ -211,7 +239,21 @@ class ControlAndroidApp:
             self._render(previous_serial=selected)
             self._set_busy(False)
 
-        self._run_background(do_connect, done)
+        self._run_background(do_connect, done, "Connecting...")
+
+    def run_item_information(self) -> None:
+        if self.model.connected is None:
+            self.status_var.set("Status: Connect a device first")
+            return
+
+        def do_workflow() -> None:
+            self.model.run_item_information()
+
+        def done() -> None:
+            self._render(previous_serial=self.model.connected.serial if self.model.connected else None)
+            self._set_busy(False)
+
+        self._run_background(do_workflow, done, "Detecting item page...")
 
     def _render(self, previous_serial: str | None = None) -> None:
         self.adb_status_var.set("ADB Status: Ready" if self.model.adb_ready else "ADB Status: Error")
@@ -236,6 +278,13 @@ class ControlAndroidApp:
         else:
             self.serial_var.set("Serial: -")
             self.state_var.set("State: -")
+
+        if self.model.last_workflow_status:
+            self.workflow_var.set(
+                f"Workflow: {self.model.last_workflow_status} | Evidence: {self.model.last_workflow_evidence_dir}"
+            )
+        else:
+            self.workflow_var.set("Workflow: -")
 
 
 def main() -> None:
